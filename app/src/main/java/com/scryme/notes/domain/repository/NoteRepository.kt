@@ -7,6 +7,7 @@ import com.scryme.notes.domain.model.Note
  * rich text notes.
  */
 interface NoteRepository {
+
     /**
      * Inserts or updates a note.
      */
@@ -33,14 +34,16 @@ interface NoteRepository {
     suspend fun getSubNotes(parentId: String): List<Note>
 
     /**
+     * Retrieves all notes in the database.
+     */
+    suspend fun getAllNotes(): List<Note>
+
+    /**
      * Moves a note to a different parent (or makes it a root note by passing null).
      * This checks for cycles to prevent a note from being moved inside itself or one of its descendants.
      * Returns true if the move was successful, false otherwise.
      */
-    suspend fun moveNote(
-        noteId: String,
-        newParentId: String?,
-    ): Boolean
+    suspend fun moveNote(noteId: String, newParentId: String?): Boolean
 
     /**
      * Computes the breadcrumb trail (list of Notes from root down to this note).

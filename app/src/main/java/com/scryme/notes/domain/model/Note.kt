@@ -8,10 +8,8 @@ data class Note(
     val id: String,
     val title: String,
     val blocks: List<Block>,
-    // Null if it is a root note, or points to the parent Note ID
-    val parentId: String?,
+    val parentId: String?, // Null if it is a root note, or points to the parent Note ID
     val createdAt: Long,
     val updatedAt: Long,
-    // For ordering sibling notes
-    val order: Int = 0,
+    val order: Int = 0 // For ordering sibling notes
 )

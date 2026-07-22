@@ -21,12 +21,12 @@ import com.scryme.notes.domain.model.Note
             entity = NoteEntity::class,
             parentColumns = ["id"],
             childColumns = ["parentId"],
-            onDelete = ForeignKey.CASCADE,
-        ),
+            onDelete = ForeignKey.CASCADE
+        )
     ],
     indices = [
-        Index("parentId"),
-    ],
+        Index("parentId")
+    ]
 )
 data class NoteEntity(
     @PrimaryKey
@@ -36,7 +36,7 @@ data class NoteEntity(
     val parentId: String?,
     val createdAt: Long,
     val updatedAt: Long,
-    val orderIndex: Int,
+    val orderIndex: Int
 ) {
     fun toDomain(): Note {
         return Note(
@@ -46,7 +46,7 @@ data class NoteEntity(
             parentId = parentId,
             createdAt = createdAt,
             updatedAt = updatedAt,
-            order = orderIndex,
+            order = orderIndex
         )
     }
 
@@ -59,7 +59,7 @@ data class NoteEntity(
                 parentId = note.parentId,
                 createdAt = note.createdAt,
                 updatedAt = note.updatedAt,
-                orderIndex = note.order,
+                orderIndex = note.order
             )
         }
     }

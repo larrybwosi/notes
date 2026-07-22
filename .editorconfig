@@ -1,9 +1,0 @@
-root = true
-
-[*.{kt,kts}]
-indent_size = 4
-insert_final_newline = true
-max_line_length = 120
-ktlint_function_naming_ignore_when_annotated_with = Composable
-# For Android, sometimes wildcard imports are preferred or allowed for room/compose/junit. Let's keep them allowed.
-ktlint_standard_no-wildcard-imports = disabled
