@@ -1,0 +1,25 @@
+# Gradle caches and build output
+.gradle/
+build/
+**/build/
+
+# Android Studio and IntelliJ files
+.idea/
+*.iml
+*.ipr
+*.iws
+local.properties
+.navigation/
+
+# Log files
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Built APKs/Bundles
+*.apk
+*.aar
+*.ap_
+*.aab
