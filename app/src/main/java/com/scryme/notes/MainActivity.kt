@@ -27,7 +27,6 @@ import com.scryme.notes.ui.viewmodel.NoteViewModel
 import com.scryme.notes.ui.viewmodel.NoteViewModelFactory
 
 class MainActivity : ComponentActivity() {
-
     private val viewModel: NoteViewModel by viewModels {
         NoteViewModelFactory(DatabaseProvider.getRepository(applicationContext))
     }
@@ -39,7 +38,7 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background,
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     MainScreenLayout(viewModel)
                 }

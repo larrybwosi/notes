@@ -13,7 +13,7 @@ enum class BlockType {
     TODO_LIST_ITEM,
     CODE_BLOCK,
     QUOTE,
-    CALLOUT,
+    CALLOUT
 }
 
 /**
@@ -29,7 +29,7 @@ enum class StyleType {
     TEXT_COLOR_BLUE,
     TEXT_COLOR_GREEN,
     BACKGROUND_COLOR_YELLOW,
-    BACKGROUND_COLOR_LIGHT_GRAY,
+    BACKGROUND_COLOR_LIGHT_GRAY
 }
 
 /**
@@ -39,7 +39,7 @@ enum class StyleType {
 data class InlineStyleSpan(
     val styleType: StyleType,
     val start: Int,
-    val end: Int,
+    val end: Int
 )
 
 /**
@@ -52,6 +52,5 @@ data class Block(
     val type: BlockType,
     val text: String,
     val inlineStyles: List<InlineStyleSpan> = emptyList(),
-    // For metadata like "checked" for TODO, "language" for code, etc.
-    val properties: Map<String, String> = emptyMap(),
+    val properties: Map<String, String> = emptyMap() // For metadata like "checked" for TODO, "language" for code, etc.
 )

@@ -11,7 +11,6 @@ import com.scryme.notes.domain.model.InlineStyleSpan
 import com.scryme.notes.domain.model.StyleType
 
 object RichTextTransformer {
-
     fun toAnnotatedString(text: String, inlineStyles: List<InlineStyleSpan>): AnnotatedString {
         val builder = AnnotatedString.Builder(text)
 

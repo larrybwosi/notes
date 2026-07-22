@@ -7,6 +7,7 @@ import com.scryme.notes.domain.model.Note
  * rich text notes.
  */
 interface NoteRepository {
+
     /**
      * Inserts or updates a note.
      */
@@ -42,10 +43,7 @@ interface NoteRepository {
      * This checks for cycles to prevent a note from being moved inside itself or one of its descendants.
      * Returns true if the move was successful, false otherwise.
      */
-    suspend fun moveNote(
-        noteId: String,
-        newParentId: String?,
-    ): Boolean
+    suspend fun moveNote(noteId: String, newParentId: String?): Boolean
 
     /**
      * Computes the breadcrumb trail (list of Notes from root down to this note).

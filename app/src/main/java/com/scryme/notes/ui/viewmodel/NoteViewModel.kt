@@ -17,7 +17,6 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 
 class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
-
     private val _allNotes = MutableStateFlow<List<Note>>(emptyList())
     val allNotes: StateFlow<List<Note>> = _allNotes.asStateFlow()
 
