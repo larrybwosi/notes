@@ -3,26 +3,45 @@ package com.scryme.notes
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuOpen
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.scryme.notes.ui.DatabaseProvider
+import com.scryme.notes.ui.screens.NoteEditorScreen
+import com.scryme.notes.ui.screens.WorkspaceScreen
+import com.scryme.notes.ui.viewmodel.NoteViewModel
+import com.scryme.notes.ui.viewmodel.NoteViewModelFactory
 
 class MainActivity : ComponentActivity() {
+
+    private val viewModel: NoteViewModel by viewModels {
+        NoteViewModelFactory(DatabaseProvider.getRepository(applicationContext))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             MaterialTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Greeting("Notes App")
+                    MainScreenLayout(viewModel)
                 }
             }
         }
@@ -30,17 +49,75 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier.padding(16.dp)
-    )
-}
+fun MainScreenLayout(viewModel: NoteViewModel) {
+    var sidebarVisible by remember { mutableStateOf(true) }
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    MaterialTheme {
-        Greeting("Notes App")
+    Row(modifier = Modifier.fillMaxSize()) {
+        // Collapsible Sidebar (Workspace Screen)
+        AnimatedVisibility(
+            visible = sidebarVisible,
+            enter = slideInHorizontally { -it },
+            exit = slideOutHorizontally { -it }
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(260.dp),
+                tonalElevation = 1.dp,
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            ) {
+                WorkspaceScreen(
+                    viewModel = viewModel,
+                    onNoteSelected = {
+                        // Optionally close sidebar on narrow screens when note selected
+                    }
+                )
+            }
+        }
+
+        // Vertical divider if sidebar is open
+        if (sidebarVisible) {
+            VerticalDivider(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(1.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            )
+        }
+
+        // Main Editor Area with Toolbar at the top to toggle sidebar
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = { sidebarVisible = !sidebarVisible }
+                ) {
+                    Icon(
+                        imageVector = if (sidebarVisible) Icons.AutoMirrored.Filled.MenuOpen else Icons.Default.Menu,
+                        contentDescription = "Toggle Sidebar",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+            )
+
+            // Editor Screen View
+            NoteEditorScreen(
+                viewModel = viewModel,
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 }

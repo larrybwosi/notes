@@ -40,6 +40,10 @@ class NoteRepositoryImpl(
         return noteDao.getSubNotesOf(parentId).map { it.toDomain() }
     }
 
+    override suspend fun getAllNotes(): List<Note> {
+        return noteDao.getAllNotes().map { it.toDomain() }
+    }
+
     override suspend fun moveNote(noteId: String, newParentId: String?): Boolean {
         // Ensure note exists
         val noteEntity = noteDao.getNoteById(noteId) ?: return false
