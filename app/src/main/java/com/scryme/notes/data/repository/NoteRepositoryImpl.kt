@@ -6,9 +6,8 @@ import com.scryme.notes.domain.model.Note
 import com.scryme.notes.domain.repository.NoteRepository
 
 class NoteRepositoryImpl(
-    private val noteDao: NoteDao
+    private val noteDao: NoteDao,
 ) : NoteRepository {
-
     override suspend fun saveNote(note: Note) {
         noteDao.insertNote(NoteEntity.fromDomain(note))
     }
@@ -44,7 +43,10 @@ class NoteRepositoryImpl(
         return noteDao.getAllNotes().map { it.toDomain() }
     }
 
-    override suspend fun moveNote(noteId: String, newParentId: String?): Boolean {
+    override suspend fun moveNote(
+        noteId: String,
+        newParentId: String?,
+    ): Boolean {
         // Ensure note exists
         val noteEntity = noteDao.getNoteById(noteId) ?: return false
 
@@ -58,10 +60,11 @@ class NoteRepositoryImpl(
             }
         }
 
-        val updatedEntity = noteEntity.copy(
-            parentId = newParentId,
-            updatedAt = System.currentTimeMillis()
-        )
+        val updatedEntity =
+            noteEntity.copy(
+                parentId = newParentId,
+                updatedAt = System.currentTimeMillis(),
+            )
         noteDao.updateNote(updatedEntity)
         return true
     }
@@ -87,7 +90,10 @@ class NoteRepositoryImpl(
     /**
      * Helper check to detect cycles: determines if descendantId is a child/descendant of ancestorId.
      */
-    private suspend fun isDescendant(descendantId: String, ancestorId: String): Boolean {
+    private suspend fun isDescendant(
+        descendantId: String,
+        ancestorId: String,
+    ): Boolean {
         var currentId: String? = descendantId
         val visited = mutableSetOf<String>()
 
