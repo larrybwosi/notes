@@ -192,8 +192,8 @@ fun NoteEditorScreen(
                     onTextChanged = { text ->
                         viewModel.updateBlockText(block.id, text)
                     },
-                    onEnterPressed = {
-                        viewModel.insertBlockAfter(block.id, BlockType.PARAGRAPH)
+                    onEnterPressed = { nextBlockText ->
+                        viewModel.insertBlockAfter(block.id, BlockType.PARAGRAPH, nextBlockText)
                     },
                     onBackspaceOnEmpty = {
                         viewModel.deleteBlock(block.id)
@@ -225,7 +225,7 @@ fun BlockEditorItem(
     focusedBlockId: String?,
     onFocusChanged: (Boolean) -> Unit,
     onTextChanged: (String) -> Unit,
-    onEnterPressed: () -> Unit,
+    onEnterPressed: (String) -> Unit,
     onBackspaceOnEmpty: () -> Unit,
     onToggleTodo: () -> Unit,
     onChangeType: (BlockType) -> Unit,
@@ -279,21 +279,72 @@ fun BlockEditorItem(
         ) {
             // Drag / Block Action Handles (Notion Style)
             if (isFocused) {
-                IconButton(
-                    onClick = onDeleteBlock,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .padding(top = 4.dp)
+                Row(
+                    modifier = Modifier.padding(top = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete block",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                        modifier = Modifier.size(14.dp)
-                    )
+                    var showTypeMenu by remember { mutableStateOf(false) }
+
+                    IconButton(
+                        onClick = { showTypeMenu = true },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Change block type",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onDeleteBlock,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete block",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showTypeMenu,
+                        onDismissRequest = { showTypeMenu = false }
+                    ) {
+                        val items = listOf(
+                            Pair("Text", BlockType.PARAGRAPH),
+                            Pair("Heading 1", BlockType.HEADER_1),
+                            Pair("Heading 2", BlockType.HEADER_2),
+                            Pair("Heading 3", BlockType.HEADER_3),
+                            Pair("To-do list", BlockType.TODO_LIST_ITEM),
+                            Pair("Bulleted list", BlockType.BULLETED_LIST_ITEM),
+                            Pair("Numbered list", BlockType.NUMBERED_LIST_ITEM),
+                            Pair("Quote", BlockType.QUOTE),
+                            Pair("Callout", BlockType.CALLOUT),
+                            Pair("Code block", BlockType.CODE_BLOCK)
+                        )
+                        items.forEach { (label, type) ->
+                            DropdownMenuItem(
+                                text = { Text(label, fontSize = 13.sp) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = getBlockIcon(type),
+                                        contentDescription = label,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                },
+                                onClick = {
+                                    onChangeType(type)
+                                    showTypeMenu = false
+                                }
+                            )
+                        }
+                    }
                 }
             } else {
-                Spacer(modifier = Modifier.width(24.dp))
+                Spacer(modifier = Modifier.width(48.dp))
             }
 
             Spacer(modifier = Modifier.width(4.dp))
@@ -377,17 +428,31 @@ fun BlockEditorItem(
                     value = textFieldValue,
                     onValueChange = { newValue ->
                         val oldText = textFieldValue.text
-                        textFieldValue = newValue
+                        if (newValue.text.contains("\n")) {
+                            val index = newValue.text.indexOf('\n')
+                            val beforeText = newValue.text.substring(0, index)
+                            val afterText = newValue.text.substring(index + 1)
 
-                        // Callback to trigger text updates
-                        if (newValue.text != oldText) {
-                            onTextChanged(newValue.text)
+                            // Immediately update state to prevent flicker
+                            textFieldValue = TextFieldValue(
+                                annotatedString = RichTextTransformer.toAnnotatedString(beforeText, block.inlineStyles),
+                                selection = TextRange(beforeText.length)
+                            )
+                            onTextChanged(beforeText)
+                            onEnterPressed(afterText)
+                        } else {
+                            textFieldValue = newValue
 
-                            // Check if typed slash command "/"
-                            if (newValue.text.endsWith("/")) {
-                                showSlashMenu = true
-                            } else {
-                                showSlashMenu = false
+                            // Callback to trigger text updates
+                            if (newValue.text != oldText) {
+                                onTextChanged(newValue.text)
+
+                                // Check if typed slash command "/"
+                                if (newValue.text.endsWith("/")) {
+                                    showSlashMenu = true
+                                } else {
+                                    showSlashMenu = false
+                                }
                             }
                         }
                     },
@@ -400,7 +465,7 @@ fun BlockEditorItem(
                         .onKeyEvent { keyEvent ->
                             if (keyEvent.type == KeyEventType.KeyDown) {
                                 if (keyEvent.key == Key.Enter) {
-                                    onEnterPressed()
+                                    onEnterPressed("")
                                     true
                                 } else if (keyEvent.key == Key.Backspace && textFieldValue.text.isEmpty()) {
                                     onBackspaceOnEmpty()
@@ -547,6 +612,46 @@ fun BlockEditorItem(
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(Icons.Default.FormatColorText, "Red Text", modifier = Modifier.size(16.dp), tint = Color.Red)
+                        }
+                        IconButton(
+                            onClick = {
+                                onApplyStyle(StyleType.TEXT_COLOR_BLUE, textFieldValue.selection.start, textFieldValue.selection.end)
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Default.FormatColorText, "Blue Text", modifier = Modifier.size(16.dp), tint = Color(0xFF1B63C2))
+                        }
+                        IconButton(
+                            onClick = {
+                                onApplyStyle(StyleType.TEXT_COLOR_GREEN, textFieldValue.selection.start, textFieldValue.selection.end)
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Default.FormatColorText, "Green Text", modifier = Modifier.size(16.dp), tint = Color(0xFF2E7D32))
+                        }
+                        IconButton(
+                            onClick = {
+                                onApplyStyle(StyleType.STRIKETHROUGH, textFieldValue.selection.start, textFieldValue.selection.end)
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Default.FormatStrikethrough, "Strikethrough", modifier = Modifier.size(16.dp))
+                        }
+                        IconButton(
+                            onClick = {
+                                onApplyStyle(StyleType.BACKGROUND_COLOR_YELLOW, textFieldValue.selection.start, textFieldValue.selection.end)
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Default.Highlight, "Yellow Highlight", modifier = Modifier.size(16.dp), tint = Color(0xFFFFF9C4))
+                        }
+                        IconButton(
+                            onClick = {
+                                onApplyStyle(StyleType.BACKGROUND_COLOR_LIGHT_GRAY, textFieldValue.selection.start, textFieldValue.selection.end)
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Default.FormatColorFill, "Light Gray Bg", modifier = Modifier.size(16.dp), tint = Color(0xFFEEEEEE))
                         }
                     }
                 }
