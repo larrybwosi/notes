@@ -41,6 +41,48 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    // --- Settings Preferences ---
+    private val _isDarkMode = MutableStateFlow(false)
+    val isDarkMode: StateFlow<Boolean> = _isDarkMode.asStateFlow()
+
+    private val _fontFamilyPreference = MutableStateFlow("Sans-Serif")
+    val fontFamilyPreference: StateFlow<String> = _fontFamilyPreference.asStateFlow()
+
+    private val _accentColorVal = MutableStateFlow(0xFF1B63C2.toInt())
+    val accentColorVal: StateFlow<Int> = _accentColorVal.asStateFlow()
+
+    private val _markdownEnabled = MutableStateFlow(true)
+    val markdownEnabled: StateFlow<Boolean> = _markdownEnabled.asStateFlow()
+
+    fun setDarkMode(enabled: Boolean) {
+        _isDarkMode.value = enabled
+    }
+
+    fun setFontFamilyPreference(font: String) {
+        _fontFamilyPreference.value = font
+    }
+
+    fun setAccentColorVal(colorVal: Int) {
+        _accentColorVal.value = colorVal
+    }
+
+    fun setMarkdownEnabled(enabled: Boolean) {
+        _markdownEnabled.value = enabled
+    }
+
+    fun clearAllNotes() {
+        viewModelScope.launch {
+            allNotes.value.forEach { note ->
+                repository.deleteNote(note.id)
+            }
+            _activeNote.value = null
+            _breadcrumbs.value = emptyList()
+            _subNotes.value = emptyList()
+            _focusedBlockId.value = null
+            loadAllNotes()
+        }
+    }
+
     init {
         loadAllNotes()
     }

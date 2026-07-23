@@ -1,5 +1,6 @@
 package com.scryme.notes.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,7 +25,6 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,11 +33,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,14 +53,13 @@ import com.scryme.notes.ui.viewmodel.NoteViewModel
 fun WorkspaceScreen(
     viewModel: NoteViewModel,
     onNoteSelected: (Note) -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val allNotes by viewModel.allNotes.collectAsState()
     val activeNote by viewModel.activeNote.collectAsState()
     val expandedNoteIds by viewModel.expandedNoteIds.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
-
-    var showSettingsDialog by remember { mutableStateOf(false) }
 
     // Group notes into tree hierarchy
     val rootNotes =
@@ -107,7 +104,7 @@ fun WorkspaceScreen(
                 )
             }
             IconButton(
-                onClick = { showSettingsDialog = true },
+                onClick = onOpenSettings,
                 modifier = Modifier.size(24.dp),
             ) {
                 Icon(
@@ -229,28 +226,6 @@ fun WorkspaceScreen(
             }
         }
     }
-
-    // Settings / Info Dialog
-    if (showSettingsDialog) {
-        AlertDialog(
-            onDismissRequest = { showSettingsDialog = false },
-            confirmButton = {
-                TextButton(onClick = { showSettingsDialog = false }) {
-                    Text("Done")
-                }
-            },
-            title = { Text("Notion Notes") },
-            text = {
-                Column {
-                    Text("Build powerful block-based notes organized in hierarchies.")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("• Local SQLite Storage (Room)", fontWeight = FontWeight.Medium)
-                    Text("• Fully-Recursive Parent-Child Tree", fontWeight = FontWeight.Medium)
-                    Text("• Notion Slash Commands (/) & Toolbar formatting", fontWeight = FontWeight.Medium)
-                }
-            },
-        )
-    }
 }
 
 @Composable
@@ -281,9 +256,13 @@ fun HierarchyNode(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(start = (indentationLevel * 12).dp)
+                    .padding(start = (indentationLevel * 12).dp, end = 8.dp)
+                    .background(
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else Color.Transparent,
+                        shape = RoundedCornerShape(8.dp),
+                    )
                     .clickable { onNoteClick(note) }
-                    .padding(vertical = 4.dp, horizontal = 12.dp),
+                    .padding(vertical = 6.dp, horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Expand/Collapse arrow
