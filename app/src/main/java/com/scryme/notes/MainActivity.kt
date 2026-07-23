@@ -370,11 +370,12 @@ fun BottomSheetContent(
     var showLabelSelectorDialog by remember { mutableStateOf(false) }
     var showLockNoteDialog by remember { mutableStateOf(false) }
 
-    val isPinned = remember(note.id) {
-        val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-        val pinnedSet = prefs.getStringSet("pinned_notes", emptySet()) ?: emptySet()
-        pinnedSet.contains(note.id)
-    }
+    val isPinned =
+        remember(note.id) {
+            val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+            val pinnedSet = prefs.getStringSet("pinned_notes", emptySet()) ?: emptySet()
+            pinnedSet.contains(note.id)
+        }
 
     val onTogglePin = {
         val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
@@ -391,10 +392,11 @@ fun BottomSheetContent(
         onDismiss()
     }
 
-    val isLocked = remember(note.id) {
-        val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-        prefs.getBoolean("locked_note_${note.id}", false)
-    }
+    val isLocked =
+        remember(note.id) {
+            val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+            prefs.getBoolean("locked_note_${note.id}", false)
+        }
 
     val onToggleLock = {
         val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
@@ -410,31 +412,34 @@ fun BottomSheetContent(
     }
 
     val onShare = {
-        val shareIntent = android.content.Intent().apply {
-            action = android.content.Intent.ACTION_SEND
-            type = "text/plain"
-            putExtra(android.content.Intent.EXTRA_SUBJECT, note.title)
-            putExtra(android.content.Intent.EXTRA_TEXT, "${note.title}\n\n" + note.blocks.joinToString("\n") { it.text })
-        }
+        val shareIntent =
+            android.content.Intent().apply {
+                action = android.content.Intent.ACTION_SEND
+                type = "text/plain"
+                putExtra(android.content.Intent.EXTRA_SUBJECT, note.title)
+                putExtra(android.content.Intent.EXTRA_TEXT, "${note.title}\n\n" + note.blocks.joinToString("\n") { it.text })
+            }
         context.startActivity(android.content.Intent.createChooser(shareIntent, "Share Note"))
         onDismiss()
     }
 
     val onSend = {
-        val sendIntent = android.content.Intent().apply {
-            action = android.content.Intent.ACTION_SEND
-            type = "text/plain"
-            putExtra(android.content.Intent.EXTRA_SUBJECT, note.title)
-            putExtra(android.content.Intent.EXTRA_TEXT, "${note.title}\n\n" + note.blocks.joinToString("\n") { it.text })
-        }
+        val sendIntent =
+            android.content.Intent().apply {
+                action = android.content.Intent.ACTION_SEND
+                type = "text/plain"
+                putExtra(android.content.Intent.EXTRA_SUBJECT, note.title)
+                putExtra(android.content.Intent.EXTRA_TEXT, "${note.title}\n\n" + note.blocks.joinToString("\n") { it.text })
+            }
         context.startActivity(android.content.Intent.createChooser(sendIntent, "Send Note"))
         onDismiss()
     }
 
-    val currentLabel = remember(note.id) {
-        val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-        prefs.getString("label_note_${note.id}", "Work") ?: "Work"
-    }
+    val currentLabel =
+        remember(note.id) {
+            val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+            prefs.getString("label_note_${note.id}", "Work") ?: "Work"
+        }
 
     Column(
         modifier =
@@ -584,21 +589,21 @@ fun BottomSheetContent(
                             value = imageUrl,
                             onValueChange = { imageUrl = it },
                             placeholder = { Text("https://example.com/image.png") },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         )
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Button(
                                 onClick = { imageUrl = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809" },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
                             ) {
                                 Text("Gradient")
                             }
                             Button(
                                 onClick = { imageUrl = "https://images.unsplash.com/photo-1451187580459-43490279c0fa" },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
                             ) {
                                 Text("Space")
                             }
@@ -612,13 +617,24 @@ fun BottomSheetContent(
                                 viewModel.insertBlockAfter(
                                     note.blocks.lastOrNull()?.id ?: "",
                                     com.scryme.notes.domain.model.BlockType.CALLOUT,
-                                    "🖼️ Image: $imageUrl"
+                                    "🖼️ Image: $imageUrl",
                                 )
+                                val attachName = "Image - " + imageUrl.substringAfterLast("/")
+                                val newAttach =
+                                    com.scryme.notes.domain.model.NoteAttachment(
+                                        id = java.util.UUID.randomUUID().toString(),
+                                        name = if (attachName.length > 30) "Image Attachment" else attachName,
+                                        uri = imageUrl,
+                                        size = "1.5 MB",
+                                        mimeType = "image/png",
+                                        addedAt = System.currentTimeMillis(),
+                                    )
+                                com.scryme.notes.domain.model.AttachmentHelper.addAttachmentToNote(context, note.id, newAttach)
                                 android.widget.Toast.makeText(context, "Image added!", android.widget.Toast.LENGTH_SHORT).show()
                             }
                             showAddImageDialog = false
                             onDismiss()
-                        }
+                        },
                     ) {
                         Text("Insert", fontWeight = FontWeight.Bold)
                     }
@@ -627,7 +643,7 @@ fun BottomSheetContent(
                     TextButton(onClick = { showAddImageDialog = false }) {
                         Text("Cancel")
                     }
-                }
+                },
             )
         }
 
@@ -651,26 +667,27 @@ fun BottomSheetContent(
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         if (isRecording) {
                             Text("Recording: ${recordedSeconds}s", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.height(40.dp)
+                                modifier = Modifier.height(40.dp),
                             ) {
                                 val heights = listOf(12, 24, 36, 18, 30, 12, 24, 36, 18, 30)
                                 heights.forEach { h ->
                                     val animatedHeight by androidx.compose.animation.core.animateDpAsState(
                                         targetValue = if (recordedSeconds % 2 == 0) h.dp else (h / 2).dp,
-                                        animationSpec = androidx.compose.animation.core.tween(500)
+                                        animationSpec = androidx.compose.animation.core.tween(500),
                                     )
                                     Box(
-                                        modifier = Modifier
-                                            .width(4.dp)
-                                            .height(animatedHeight)
-                                            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp))
+                                        modifier =
+                                            Modifier
+                                                .width(4.dp)
+                                                .height(animatedHeight)
+                                                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)),
                                     )
                                 }
                             }
@@ -687,9 +704,10 @@ fun BottomSheetContent(
                                     isRecording = true
                                 }
                             },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                            )
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                                ),
                         ) {
                             Text(if (isRecording) "Stop Recording" else "Record")
                         }
@@ -702,12 +720,22 @@ fun BottomSheetContent(
                             viewModel.insertBlockAfter(
                                 note.blocks.lastOrNull()?.id ?: "",
                                 com.scryme.notes.domain.model.BlockType.CALLOUT,
-                                "🎤 Voice Memo - ${recordedSeconds}s"
+                                "🎤 Voice Memo - ${recordedSeconds}s",
                             )
+                            val newAttach =
+                                com.scryme.notes.domain.model.NoteAttachment(
+                                    id = java.util.UUID.randomUUID().toString(),
+                                    name = "Voice Memo - ${recordedSeconds}s",
+                                    uri = "simulated://voice/${System.currentTimeMillis()}",
+                                    size = "${(recordedSeconds * 12)} KB",
+                                    mimeType = "audio/mpeg",
+                                    addedAt = System.currentTimeMillis(),
+                                )
+                            com.scryme.notes.domain.model.AttachmentHelper.addAttachmentToNote(context, note.id, newAttach)
                             android.widget.Toast.makeText(context, "Voice memo saved!", android.widget.Toast.LENGTH_SHORT).show()
                             showVoiceRecorderDialog = false
                             onDismiss()
-                        }
+                        },
                     ) {
                         Text("Save Memo", fontWeight = FontWeight.Bold)
                     }
@@ -717,11 +745,11 @@ fun BottomSheetContent(
                         onClick = {
                             isRecording = false
                             showVoiceRecorderDialog = false
-                        }
+                        },
                     ) {
                         Text("Cancel")
                     }
-                }
+                },
             )
         }
 
@@ -735,21 +763,22 @@ fun BottomSheetContent(
                         Text("Select an emoji icon to display as the header icon for this note:")
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             emojis.take(5).forEach { emoji ->
                                 Box(
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-                                        .clickable {
-                                            val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-                                            prefs.edit().putString("thumbnail_note_${note.id}", emoji).apply()
-                                            viewModel.loadAllNotes()
-                                            showAddThumbnailDialog = false
-                                            onDismiss()
-                                        },
-                                    contentAlignment = Alignment.Center
+                                    modifier =
+                                        Modifier
+                                            .size(40.dp)
+                                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                                                prefs.edit().putString("thumbnail_note_${note.id}", emoji).apply()
+                                                viewModel.loadAllNotes()
+                                                showAddThumbnailDialog = false
+                                                onDismiss()
+                                            },
+                                    contentAlignment = Alignment.Center,
                                 ) {
                                     Text(emoji, fontSize = 20.sp)
                                 }
@@ -757,21 +786,22 @@ fun BottomSheetContent(
                         }
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             emojis.drop(5).forEach { emoji ->
                                 Box(
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-                                        .clickable {
-                                            val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-                                            prefs.edit().putString("thumbnail_note_${note.id}", emoji).apply()
-                                            viewModel.loadAllNotes()
-                                            showAddThumbnailDialog = false
-                                            onDismiss()
-                                        },
-                                    contentAlignment = Alignment.Center
+                                    modifier =
+                                        Modifier
+                                            .size(40.dp)
+                                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                                                prefs.edit().putString("thumbnail_note_${note.id}", emoji).apply()
+                                                viewModel.loadAllNotes()
+                                                showAddThumbnailDialog = false
+                                                onDismiss()
+                                            },
+                                    contentAlignment = Alignment.Center,
                                 ) {
                                     Text(emoji, fontSize = 20.sp)
                                 }
@@ -786,13 +816,13 @@ fun BottomSheetContent(
                                 showAddThumbnailDialog = false
                                 onDismiss()
                             },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text("Remove Thumbnail")
                         }
                     }
                 },
-                confirmButton = {}
+                confirmButton = {},
             )
         }
 
@@ -806,27 +836,28 @@ fun BottomSheetContent(
                         Text("Choose a category tag for this note:")
                         tags.forEach { tag ->
                             Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-                                        prefs.edit().putString("label_note_${note.id}", tag).apply()
-                                        viewModel.loadAllNotes()
-                                        showLabelSelectorDialog = false
-                                        onDismiss()
-                                    },
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                                            prefs.edit().putString("label_note_${note.id}", tag).apply()
+                                            viewModel.loadAllNotes()
+                                            showLabelSelectorDialog = false
+                                            onDismiss()
+                                        },
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                             ) {
                                 Text(
                                     text = tag,
                                     modifier = Modifier.padding(16.dp),
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
                                 )
                             }
                         }
                     }
                 },
-                confirmButton = {}
+                confirmButton = {},
             )
         }
 
@@ -859,7 +890,7 @@ fun BottomSheetContent(
                             viewModel.loadAllNotes()
                             showLockNoteDialog = false
                             onDismiss()
-                        }
+                        },
                     ) {
                         Text("Lock", fontWeight = FontWeight.Bold)
                     }
@@ -868,7 +899,7 @@ fun BottomSheetContent(
                     TextButton(onClick = { showLockNoteDialog = false }) {
                         Text("Cancel")
                     }
-                }
+                },
             )
         }
 

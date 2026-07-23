@@ -22,10 +22,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.PushPin
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -65,24 +65,26 @@ fun WorkspaceScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
 
     val context = androidx.compose.ui.platform.LocalContext.current
-    val pinnedNotes = remember(allNotes) {
-        val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-        prefs.getStringSet("pinned_notes", emptySet()) ?: emptySet()
-    }
+    val pinnedNotes =
+        remember(allNotes) {
+            val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+            prefs.getStringSet("pinned_notes", emptySet()) ?: emptySet()
+        }
 
     // Group notes into tree hierarchy
     val rootNotes =
         remember(allNotes, searchQuery, pinnedNotes) {
             val roots = allNotes.filter { it.parentId == null }
-            val filtered = if (searchQuery.isBlank()) {
-                roots
-            } else {
-                // If searching, flat filter list of matching notes
-                allNotes.filter { it.title.contains(searchQuery, ignoreCase = true) }
-            }
+            val filtered =
+                if (searchQuery.isBlank()) {
+                    roots
+                } else {
+                    // If searching, flat filter list of matching notes
+                    allNotes.filter { it.title.contains(searchQuery, ignoreCase = true) }
+                }
             filtered.sortedWith(
                 compareByDescending<com.scryme.notes.domain.model.Note> { pinnedNotes.contains(it.id) }
-                    .thenByDescending { it.updatedAt }
+                    .thenByDescending { it.updatedAt },
             )
         }
 
@@ -306,15 +308,17 @@ fun HierarchyNode(
             Spacer(modifier = Modifier.width(8.dp))
 
             val context = androidx.compose.ui.platform.LocalContext.current
-            val isPinned = remember(note.id) {
-                val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-                val pinnedSet = prefs.getStringSet("pinned_notes", emptySet()) ?: emptySet()
-                pinnedSet.contains(note.id)
-            }
-            val isLocked = remember(note.id) {
-                val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-                prefs.getBoolean("locked_note_${note.id}", false)
-            }
+            val isPinned =
+                remember(note.id) {
+                    val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                    val pinnedSet = prefs.getStringSet("pinned_notes", emptySet()) ?: emptySet()
+                    pinnedSet.contains(note.id)
+                }
+            val isLocked =
+                remember(note.id) {
+                    val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                    prefs.getBoolean("locked_note_${note.id}", false)
+                }
 
             // Note Title
             Text(
