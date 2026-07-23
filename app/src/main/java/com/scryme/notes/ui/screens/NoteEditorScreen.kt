@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -34,13 +33,11 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import com.scryme.notes.domain.model.Block
 import com.scryme.notes.domain.model.BlockType
-import com.scryme.notes.domain.model.Note
 import com.scryme.notes.domain.model.StyleType
 import com.scryme.notes.ui.components.RichTextTransformer
 import com.scryme.notes.ui.viewmodel.NoteViewModel
@@ -49,7 +46,7 @@ import com.scryme.notes.ui.viewmodel.NoteViewModel
 fun NoteEditorScreen(
     viewModel: NoteViewModel,
     onOpenSidebar: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val activeNote by viewModel.activeNote.collectAsState()
     val breadcrumbs by viewModel.breadcrumbs.collectAsState()
@@ -60,29 +57,31 @@ fun NoteEditorScreen(
 
     if (activeNote == null) {
         Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            contentAlignment = Alignment.Center
+            modifier =
+                modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+            contentAlignment = Alignment.Center,
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(32.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
             ) {
                 Surface(
                     modifier = Modifier.size(96.dp),
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.MenuBook,
                             contentDescription = "Premium Book Icon",
                             modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
@@ -91,35 +90,37 @@ fun NoteEditorScreen(
 
                 Text(
                     text = "Welcome to Scryme Notes",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    ),
-                    textAlign = TextAlign.Center
+                    style =
+                        MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        ),
+                    textAlign = TextAlign.Center,
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = "A beautiful block-based workspace with nested notebooks, markdown shortcuts, rich text formatting, and obsidian style organization.",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp),
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Button(
                         onClick = { viewModel.createRootNote("My First Note") },
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
                     ) {
                         Icon(Icons.Default.Add, contentDescription = "Create page")
                         Spacer(modifier = Modifier.width(8.dp))
@@ -129,7 +130,7 @@ fun NoteEditorScreen(
                     OutlinedButton(
                         onClick = onOpenSidebar,
                         shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
                     ) {
                         Icon(Icons.Default.Folder, contentDescription = "Browse folders")
                         Spacer(modifier = Modifier.width(8.dp))
@@ -145,15 +146,16 @@ fun NoteEditorScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             // Notion Breadcrumbs
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 breadcrumbs.forEachIndexed { idx, crumb ->
                     Text(
@@ -161,14 +163,14 @@ fun NoteEditorScreen(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = if (idx == breadcrumbs.lastIndex) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable { viewModel.selectNote(crumb.id) }
+                        modifier = Modifier.clickable { viewModel.selectNote(crumb.id) },
                     )
                     if (idx < breadcrumbs.lastIndex) {
                         Icon(
                             imageVector = Icons.Default.ChevronRight,
                             contentDescription = "Separator",
                             modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -184,26 +186,28 @@ fun NoteEditorScreen(
                     titleText = it
                     viewModel.updateActiveNoteTitle(it)
                 },
-                textStyle = TextStyle(
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                ),
+                textStyle =
+                    TextStyle(
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    ),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 decorationBox = { innerTextField ->
                     if (titleText.isEmpty()) {
                         Text(
                             "Untitled",
-                            style = TextStyle(
-                                fontSize = 32.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                            )
+                            style =
+                                TextStyle(
+                                    fontSize = 32.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                ),
                         )
                     }
                     innerTextField()
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -214,29 +218,30 @@ fun NoteEditorScreen(
                     "Sub-pages",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 subNotes.forEach { sub ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { viewModel.selectNote(sub.id) }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.selectNote(sub.id) }
+                                .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.List,
                             contentDescription = "Page Icon",
                             modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.primary,
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = if (sub.title.isBlank()) "Untitled" else sub.title,
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
                         )
                     }
                 }
@@ -248,7 +253,7 @@ fun NoteEditorScreen(
                 onClick = { viewModel.createChildNote(note.id) },
                 shape = RoundedCornerShape(8.dp),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                modifier = Modifier.align(Alignment.Start)
+                modifier = Modifier.align(Alignment.Start),
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add subpage", modifier = Modifier.size(14.dp))
                 Spacer(modifier = Modifier.width(4.dp))
@@ -259,9 +264,10 @@ fun NoteEditorScreen(
 
             // Scrollable list of rich text blocks
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
             ) {
                 itemsIndexed(note.blocks, key = { _, block -> block.id }) { _, block ->
                     BlockEditorItem(
@@ -274,7 +280,8 @@ fun NoteEditorScreen(
                             viewModel.updateBlockText(block.id, text)
                         },
                         onEnterPressed = { nextBlockText ->
-                            val isListType = block.type == BlockType.BULLETED_LIST_ITEM ||
+                            val isListType =
+                                block.type == BlockType.BULLETED_LIST_ITEM ||
                                     block.type == BlockType.NUMBERED_LIST_ITEM ||
                                     block.type == BlockType.TODO_LIST_ITEM
                             if (isListType && block.text.isEmpty()) {
@@ -286,7 +293,8 @@ fun NoteEditorScreen(
                             }
                         },
                         onBackspaceOnEmpty = {
-                            val isListType = block.type == BlockType.BULLETED_LIST_ITEM ||
+                            val isListType =
+                                block.type == BlockType.BULLETED_LIST_ITEM ||
                                     block.type == BlockType.NUMBERED_LIST_ITEM ||
                                     block.type == BlockType.TODO_LIST_ITEM
                             if (isListType) {
@@ -311,7 +319,7 @@ fun NoteEditorScreen(
                             if (focusedBlockId == block.id) {
                                 activeSelection = selection
                             }
-                        }
+                        },
                     )
                 }
             }
@@ -325,45 +333,49 @@ fun NoteEditorScreen(
                 var showBlocksMenu by remember { mutableStateOf(false) }
 
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                        .navigationBarsPadding()
-                        .imePadding()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .navigationBarsPadding()
+                            .imePadding()
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     // 1. Horizontal Scrollable Formatting Toolbar
                     if (showFormattingBar) {
                         Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 6.dp),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 6.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
                         ) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .horizontalScroll(rememberScrollState())
-                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState())
+                                        .padding(horizontal = 12.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 // Quick Type Converter Chips
-                                val types = listOf(
-                                    Triple("Text", BlockType.PARAGRAPH, Icons.Default.Title),
-                                    Triple("H1", BlockType.HEADER_1, Icons.Default.LooksOne),
-                                    Triple("H2", BlockType.HEADER_2, Icons.Default.LooksTwo),
-                                    Triple("H3", BlockType.HEADER_3, Icons.Default.Looks3),
-                                    Triple("Todo", BlockType.TODO_LIST_ITEM, Icons.Default.CheckBox),
-                                    Triple("Bullet", BlockType.BULLETED_LIST_ITEM, Icons.AutoMirrored.Filled.FormatListBulleted),
-                                    Triple("Number", BlockType.NUMBERED_LIST_ITEM, Icons.Default.FormatListNumbered),
-                                    Triple("Quote", BlockType.QUOTE, Icons.Default.FormatQuote),
-                                    Triple("Callout", BlockType.CALLOUT, Icons.Default.Lightbulb),
-                                    Triple("Code", BlockType.CODE_BLOCK, Icons.Default.Code)
-                                )
+                                val types =
+                                    listOf(
+                                        Triple("Text", BlockType.PARAGRAPH, Icons.Default.Title),
+                                        Triple("H1", BlockType.HEADER_1, Icons.Default.LooksOne),
+                                        Triple("H2", BlockType.HEADER_2, Icons.Default.LooksTwo),
+                                        Triple("H3", BlockType.HEADER_3, Icons.Default.Looks3),
+                                        Triple("Todo", BlockType.TODO_LIST_ITEM, Icons.Default.CheckBox),
+                                        Triple("Bullet", BlockType.BULLETED_LIST_ITEM, Icons.AutoMirrored.Filled.FormatListBulleted),
+                                        Triple("Number", BlockType.NUMBERED_LIST_ITEM, Icons.Default.FormatListNumbered),
+                                        Triple("Quote", BlockType.QUOTE, Icons.Default.FormatQuote),
+                                        Triple("Callout", BlockType.CALLOUT, Icons.Default.Lightbulb),
+                                        Triple("Code", BlockType.CODE_BLOCK, Icons.Default.Code),
+                                    )
 
                                 types.forEach { (label, blockType, icon) ->
                                     val isSelectedType = focusedBlock.type == blockType
@@ -375,14 +387,15 @@ fun NoteEditorScreen(
                                             Icon(
                                                 imageVector = icon,
                                                 contentDescription = label,
-                                                modifier = Modifier.size(14.dp)
+                                                modifier = Modifier.size(14.dp),
                                             )
                                         },
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary
-                                        )
+                                        colors =
+                                            FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                                selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                                            ),
                                     )
                                 }
 
@@ -397,7 +410,7 @@ fun NoteEditorScreen(
                                     onClick = {
                                         viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BOLD, start, end)
                                     },
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(36.dp),
                                 ) {
                                     Icon(Icons.Default.FormatBold, "Bold", modifier = Modifier.size(18.dp))
                                 }
@@ -406,7 +419,7 @@ fun NoteEditorScreen(
                                     onClick = {
                                         viewModel.applyStyleToSelection(focusedBlock.id, StyleType.ITALIC, start, end)
                                     },
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(36.dp),
                                 ) {
                                     Icon(Icons.Default.FormatItalic, "Italic", modifier = Modifier.size(18.dp))
                                 }
@@ -415,7 +428,7 @@ fun NoteEditorScreen(
                                     onClick = {
                                         viewModel.applyStyleToSelection(focusedBlock.id, StyleType.UNDERLINE, start, end)
                                     },
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(36.dp),
                                 ) {
                                     Icon(Icons.Default.FormatUnderlined, "Underline", modifier = Modifier.size(18.dp))
                                 }
@@ -424,7 +437,7 @@ fun NoteEditorScreen(
                                     onClick = {
                                         viewModel.applyStyleToSelection(focusedBlock.id, StyleType.STRIKETHROUGH, start, end)
                                     },
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(36.dp),
                                 ) {
                                     Icon(Icons.Default.FormatStrikethrough, "Strikethrough", modifier = Modifier.size(18.dp))
                                 }
@@ -433,7 +446,7 @@ fun NoteEditorScreen(
                                     onClick = {
                                         viewModel.applyStyleToSelection(focusedBlock.id, StyleType.CODE, start, end)
                                     },
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(36.dp),
                                 ) {
                                     Icon(Icons.Default.Code, "Code Span", modifier = Modifier.size(18.dp))
                                 }
@@ -445,7 +458,7 @@ fun NoteEditorScreen(
                                     onClick = {
                                         viewModel.applyStyleToSelection(focusedBlock.id, StyleType.TEXT_COLOR_RED, start, end)
                                     },
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(36.dp),
                                 ) {
                                     Icon(Icons.Default.FormatColorText, "Red Text", modifier = Modifier.size(18.dp), tint = Color.Red)
                                 }
@@ -454,18 +467,28 @@ fun NoteEditorScreen(
                                     onClick = {
                                         viewModel.applyStyleToSelection(focusedBlock.id, StyleType.TEXT_COLOR_BLUE, start, end)
                                     },
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(36.dp),
                                 ) {
-                                    Icon(Icons.Default.FormatColorText, "Blue Text", modifier = Modifier.size(18.dp), tint = Color(0xFF1B63C2))
+                                    Icon(
+                                        Icons.Default.FormatColorText,
+                                        "Blue Text",
+                                        modifier = Modifier.size(18.dp),
+                                        tint = Color(0xFF1B63C2),
+                                    )
                                 }
 
                                 IconButton(
                                     onClick = {
                                         viewModel.applyStyleToSelection(focusedBlock.id, StyleType.TEXT_COLOR_GREEN, start, end)
                                     },
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(36.dp),
                                 ) {
-                                    Icon(Icons.Default.FormatColorText, "Green Text", modifier = Modifier.size(18.dp), tint = Color(0xFF2E7D32))
+                                    Icon(
+                                        Icons.Default.FormatColorText,
+                                        "Green Text",
+                                        modifier = Modifier.size(18.dp),
+                                        tint = Color(0xFF2E7D32),
+                                    )
                                 }
 
                                 VerticalDivider(modifier = Modifier.height(24.dp))
@@ -475,18 +498,28 @@ fun NoteEditorScreen(
                                     onClick = {
                                         viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BACKGROUND_COLOR_YELLOW, start, end)
                                     },
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(36.dp),
                                 ) {
-                                    Icon(Icons.Default.Highlight, "Yellow Highlight", modifier = Modifier.size(18.dp), tint = Color(0xFFFFF9C4))
+                                    Icon(
+                                        Icons.Default.Highlight,
+                                        "Yellow Highlight",
+                                        modifier = Modifier.size(18.dp),
+                                        tint = Color(0xFFFFF9C4),
+                                    )
                                 }
 
                                 IconButton(
                                     onClick = {
                                         viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BACKGROUND_COLOR_LIGHT_GRAY, start, end)
                                     },
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(36.dp),
                                 ) {
-                                    Icon(Icons.Default.FormatColorFill, "Light Gray Bg", modifier = Modifier.size(18.dp), tint = Color(0xFFEEEEEE))
+                                    Icon(
+                                        Icons.Default.FormatColorFill,
+                                        "Light Gray Bg",
+                                        modifier = Modifier.size(18.dp),
+                                        tint = Color(0xFFEEEEEE),
+                                    )
                                 }
 
                                 VerticalDivider(modifier = Modifier.height(24.dp))
@@ -496,7 +529,7 @@ fun NoteEditorScreen(
                                     onClick = {
                                         viewModel.insertBlockAfter(focusedBlock.id, BlockType.PARAGRAPH, "")
                                     },
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(36.dp),
                                 ) {
                                     Icon(Icons.Default.AddCircleOutline, "Add Block Below", modifier = Modifier.size(18.dp))
                                 }
@@ -505,9 +538,14 @@ fun NoteEditorScreen(
                                     onClick = {
                                         viewModel.deleteBlock(focusedBlock.id)
                                     },
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(36.dp),
                                 ) {
-                                    Icon(Icons.Default.Delete, "Delete Block", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        "Delete Block",
+                                        modifier = Modifier.size(18.dp),
+                                        tint = MaterialTheme.colorScheme.error,
+                                    )
                                 }
                             }
                         }
@@ -515,33 +553,35 @@ fun NoteEditorScreen(
 
                     // 2. Mockup 5-Tool Keyboard Accessory Bar
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         shape = RoundedCornerShape(25.dp),
-                        border = androidx.compose.foundation.BorderStroke(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                        )
+                        border =
+                            androidx.compose.foundation.BorderStroke(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                            ),
                     ) {
                         Row(
                             modifier = Modifier.fillMaxSize(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceEvenly
+                            horizontalArrangement = Arrangement.SpaceEvenly,
                         ) {
                             // Pen/Scribble: Converts to/from CALLOUT
                             IconButton(
                                 onClick = {
                                     val newType = if (focusedBlock.type == BlockType.CALLOUT) BlockType.PARAGRAPH else BlockType.CALLOUT
                                     viewModel.changeBlockType(focusedBlock.id, newType)
-                                }
+                                },
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Brush,
                                     contentDescription = "Scribble/Callout",
-                                    tint = if (focusedBlock.type == BlockType.CALLOUT) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = if (focusedBlock.type == BlockType.CALLOUT) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
 
@@ -550,12 +590,12 @@ fun NoteEditorScreen(
                                 onClick = {
                                     val newType = if (focusedBlock.type == BlockType.TODO_LIST_ITEM) BlockType.PARAGRAPH else BlockType.TODO_LIST_ITEM
                                     viewModel.changeBlockType(focusedBlock.id, newType)
-                                }
+                                },
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.CheckCircleOutline,
                                     contentDescription = "Checklist/Todo",
-                                    tint = if (focusedBlock.type == BlockType.TODO_LIST_ITEM) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = if (focusedBlock.type == BlockType.TODO_LIST_ITEM) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
 
@@ -564,12 +604,12 @@ fun NoteEditorScreen(
                                 onClick = {
                                     val newType = if (focusedBlock.type == BlockType.CODE_BLOCK) BlockType.PARAGRAPH else BlockType.CODE_BLOCK
                                     viewModel.changeBlockType(focusedBlock.id, newType)
-                                }
+                                },
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.GridOn,
                                     contentDescription = "Table/Code block",
-                                    tint = if (focusedBlock.type == BlockType.CODE_BLOCK) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = if (focusedBlock.type == BlockType.CODE_BLOCK) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
 
@@ -577,12 +617,12 @@ fun NoteEditorScreen(
                             IconButton(
                                 onClick = {
                                     showFormattingBar = !showFormattingBar
-                                }
+                                },
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.TextFields,
                                     contentDescription = "Format Text",
-                                    tint = if (showFormattingBar) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = if (showFormattingBar) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
 
@@ -591,31 +631,32 @@ fun NoteEditorScreen(
                                 IconButton(
                                     onClick = {
                                         showBlocksMenu = !showBlocksMenu
-                                    }
+                                    },
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Widgets,
                                         contentDescription = "More Blocks",
-                                        tint = if (showBlocksMenu) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        tint = if (showBlocksMenu) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
 
                                 DropdownMenu(
                                     expanded = showBlocksMenu,
-                                    onDismissRequest = { showBlocksMenu = false }
+                                    onDismissRequest = { showBlocksMenu = false },
                                 ) {
-                                    val items = listOf(
-                                        Pair("Text", BlockType.PARAGRAPH),
-                                        Pair("Heading 1", BlockType.HEADER_1),
-                                        Pair("Heading 2", BlockType.HEADER_2),
-                                        Pair("Heading 3", BlockType.HEADER_3),
-                                        Pair("To-do list", BlockType.TODO_LIST_ITEM),
-                                        Pair("Bulleted list", BlockType.BULLETED_LIST_ITEM),
-                                        Pair("Numbered list", BlockType.NUMBERED_LIST_ITEM),
-                                        Pair("Quote", BlockType.QUOTE),
-                                        Pair("Callout", BlockType.CALLOUT),
-                                        Pair("Code block", BlockType.CODE_BLOCK)
-                                    )
+                                    val items =
+                                        listOf(
+                                            Pair("Text", BlockType.PARAGRAPH),
+                                            Pair("Heading 1", BlockType.HEADER_1),
+                                            Pair("Heading 2", BlockType.HEADER_2),
+                                            Pair("Heading 3", BlockType.HEADER_3),
+                                            Pair("To-do list", BlockType.TODO_LIST_ITEM),
+                                            Pair("Bulleted list", BlockType.BULLETED_LIST_ITEM),
+                                            Pair("Numbered list", BlockType.NUMBERED_LIST_ITEM),
+                                            Pair("Quote", BlockType.QUOTE),
+                                            Pair("Callout", BlockType.CALLOUT),
+                                            Pair("Code block", BlockType.CODE_BLOCK),
+                                        )
                                     items.forEach { (label, type) ->
                                         DropdownMenuItem(
                                             text = { Text(label, fontSize = 13.sp) },
@@ -623,13 +664,13 @@ fun NoteEditorScreen(
                                                 Icon(
                                                     imageVector = getBlockIcon(type),
                                                     contentDescription = label,
-                                                    modifier = Modifier.size(16.dp)
+                                                    modifier = Modifier.size(16.dp),
                                                 )
                                             },
                                             onClick = {
                                                 viewModel.changeBlockType(focusedBlock.id, type)
                                                 showBlocksMenu = false
-                                            }
+                                            },
                                         )
                                     }
                                 }
@@ -654,7 +695,7 @@ fun BlockEditorItem(
     onChangeType: (BlockType) -> Unit,
     onApplyStyle: (StyleType, Int, Int) -> Unit,
     onDeleteBlock: () -> Unit,
-    onSelectionChanged: (TextRange) -> Unit
+    onSelectionChanged: (TextRange) -> Unit,
 ) {
     val isFocused = focusedBlockId == block.id
     val focusRequester = remember { FocusRequester() }
@@ -663,8 +704,8 @@ fun BlockEditorItem(
         mutableStateOf(
             TextFieldValue(
                 annotatedString = RichTextTransformer.toAnnotatedString(block.text, block.inlineStyles),
-                selection = TextRange(block.text.length)
-            )
+                selection = TextRange(block.text.length),
+            ),
         )
     }
 
@@ -675,10 +716,11 @@ fun BlockEditorItem(
             val length = block.text.length
             val newStart = textFieldValue.selection.start.coerceIn(0, length)
             val newEnd = textFieldValue.selection.end.coerceIn(0, length)
-            textFieldValue = textFieldValue.copy(
-                annotatedString = annotated,
-                selection = TextRange(newStart, newEnd)
-            )
+            textFieldValue =
+                textFieldValue.copy(
+                    annotatedString = annotated,
+                    selection = TextRange(newStart, newEnd),
+                )
         }
     }
 
@@ -698,29 +740,33 @@ fun BlockEditorItem(
     var showSlashMenu by remember { mutableStateOf(false) }
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
     ) {
         // Block Layout Container with indentations for professional list layouts
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(
-                    when (block.type) {
-                        BlockType.BULLETED_LIST_ITEM -> Modifier.padding(start = 14.dp, end = 4.dp)
-                        BlockType.NUMBERED_LIST_ITEM -> Modifier.padding(start = 14.dp, end = 4.dp)
-                        BlockType.TODO_LIST_ITEM -> Modifier.padding(start = 8.dp, end = 4.dp)
-                        BlockType.CALLOUT -> Modifier
-                            .background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
-                            .padding(12.dp)
-                        BlockType.QUOTE -> Modifier
-                            .background(Color(0xFFF8FAFC))
-                            .padding(start = 12.dp, top = 6.dp, bottom = 6.dp)
-                        else -> Modifier
-                    }
-                ),
-            verticalAlignment = Alignment.Top
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .then(
+                        when (block.type) {
+                            BlockType.BULLETED_LIST_ITEM -> Modifier.padding(start = 14.dp, end = 4.dp)
+                            BlockType.NUMBERED_LIST_ITEM -> Modifier.padding(start = 14.dp, end = 4.dp)
+                            BlockType.TODO_LIST_ITEM -> Modifier.padding(start = 8.dp, end = 4.dp)
+                            BlockType.CALLOUT ->
+                                Modifier
+                                    .background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
+                                    .padding(12.dp)
+                            BlockType.QUOTE ->
+                                Modifier
+                                    .background(Color(0xFFF8FAFC))
+                                    .padding(start = 12.dp, top = 6.dp, bottom = 6.dp)
+                            else -> Modifier
+                        },
+                    ),
+            verticalAlignment = Alignment.Top,
         ) {
             // Decorators based on BlockType with polished alignment
             when (block.type) {
@@ -730,7 +776,7 @@ fun BlockEditorItem(
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(end = 12.dp, top = 0.dp),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
                 BlockType.NUMBERED_LIST_ITEM -> {
@@ -739,7 +785,7 @@ fun BlockEditorItem(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(end = 10.dp, top = 2.dp),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
                 BlockType.TODO_LIST_ITEM -> {
@@ -747,35 +793,38 @@ fun BlockEditorItem(
                     Checkbox(
                         checked = isChecked,
                         onCheckedChange = { onToggleTodo() },
-                        modifier = Modifier
-                            .size(24.dp)
-                            .padding(end = 8.dp)
+                        modifier =
+                            Modifier
+                                .size(24.dp)
+                                .padding(end = 8.dp),
                     )
                 }
                 BlockType.CALLOUT -> {
                     Text(
                         "💡",
                         fontSize = 18.sp,
-                        modifier = Modifier.padding(end = 10.dp)
+                        modifier = Modifier.padding(end = 10.dp),
                     )
                 }
                 BlockType.QUOTE -> {
                     // Styled as a vertical strip indicator on left
                     Box(
-                        modifier = Modifier
-                            .width(3.dp)
-                            .fillMaxHeight()
-                            .background(Color.LightGray)
-                            .padding(end = 10.dp)
+                        modifier =
+                            Modifier
+                                .width(3.dp)
+                                .fillMaxHeight()
+                                .background(Color.LightGray)
+                                .padding(end = 10.dp),
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                 }
                 else -> {}
             }
 
-            val textStyle = remember(block.type) {
-                getBlockTextStyle(block.type)
-            }
+            val textStyle =
+                remember(block.type) {
+                    getBlockTextStyle(block.type)
+                }
 
             // Main Core BasicTextField
             BasicTextField(
@@ -788,10 +837,11 @@ fun BlockEditorItem(
                         val afterText = newValue.text.substring(index + 1)
 
                         // Immediately update state to prevent flicker
-                        textFieldValue = TextFieldValue(
-                            annotatedString = RichTextTransformer.toAnnotatedString(beforeText, block.inlineStyles),
-                            selection = TextRange(beforeText.length)
-                        )
+                        textFieldValue =
+                            TextFieldValue(
+                                annotatedString = RichTextTransformer.toAnnotatedString(beforeText, block.inlineStyles),
+                                selection = TextRange(beforeText.length),
+                            )
                         onTextChanged(beforeText)
                         onEnterPressed(afterText)
                     } else {
@@ -812,36 +862,37 @@ fun BlockEditorItem(
                 },
                 textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                modifier = Modifier
-                    .weight(1f)
-                    .focusRequester(focusRequester)
-                    .onFocusChanged { onFocusChanged(it.isFocused) }
-                    .onKeyEvent { keyEvent ->
-                        if (keyEvent.type == KeyEventType.KeyDown) {
-                            if (keyEvent.key == Key.Enter) {
-                                onEnterPressed("")
-                                true
-                            } else if (keyEvent.key == Key.Backspace && textFieldValue.text.isEmpty()) {
-                                onBackspaceOnEmpty()
-                                true
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .focusRequester(focusRequester)
+                        .onFocusChanged { onFocusChanged(it.isFocused) }
+                        .onKeyEvent { keyEvent ->
+                            if (keyEvent.type == KeyEventType.KeyDown) {
+                                if (keyEvent.key == Key.Enter) {
+                                    onEnterPressed("")
+                                    true
+                                } else if (keyEvent.key == Key.Backspace && textFieldValue.text.isEmpty()) {
+                                    onBackspaceOnEmpty()
+                                    true
+                                } else {
+                                    false
+                                }
                             } else {
                                 false
                             }
-                        } else {
-                            false
-                        }
-                    },
+                        },
                 decorationBox = { innerTextField ->
                     Box(modifier = Modifier.fillMaxWidth()) {
                         if (textFieldValue.text.isEmpty()) {
                             Text(
                                 text = getPlaceholderText(block.type),
-                                style = textStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                                style = textStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)),
                             )
                         }
                         innerTextField()
                     }
-                }
+                },
             )
         }
 
@@ -849,15 +900,16 @@ fun BlockEditorItem(
         if (showSlashMenu && isFocused) {
             Popup(
                 alignment = Alignment.BottomStart,
-                onDismissRequest = { showSlashMenu = false }
+                onDismissRequest = { showSlashMenu = false },
             ) {
                 Card(
-                    modifier = Modifier
-                        .width(220.dp)
-                        .heightIn(max = 250.dp)
-                        .padding(8.dp),
+                    modifier =
+                        Modifier
+                            .width(220.dp)
+                            .heightIn(max = 250.dp)
+                            .padding(8.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 ) {
                     Column(modifier = Modifier.padding(vertical = 4.dp)) {
                         Text(
@@ -865,39 +917,41 @@ fun BlockEditorItem(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                         )
-                        val items = listOf(
-                            Pair("Text", BlockType.PARAGRAPH),
-                            Pair("Heading 1", BlockType.HEADER_1),
-                            Pair("Heading 2", BlockType.HEADER_2),
-                            Pair("Heading 3", BlockType.HEADER_3),
-                            Pair("To-do list", BlockType.TODO_LIST_ITEM),
-                            Pair("Bulleted list", BlockType.BULLETED_LIST_ITEM),
-                            Pair("Numbered list", BlockType.NUMBERED_LIST_ITEM),
-                            Pair("Quote", BlockType.QUOTE),
-                            Pair("Callout", BlockType.CALLOUT),
-                            Pair("Code block", BlockType.CODE_BLOCK)
-                        )
+                        val items =
+                            listOf(
+                                Pair("Text", BlockType.PARAGRAPH),
+                                Pair("Heading 1", BlockType.HEADER_1),
+                                Pair("Heading 2", BlockType.HEADER_2),
+                                Pair("Heading 3", BlockType.HEADER_3),
+                                Pair("To-do list", BlockType.TODO_LIST_ITEM),
+                                Pair("Bulleted list", BlockType.BULLETED_LIST_ITEM),
+                                Pair("Numbered list", BlockType.NUMBERED_LIST_ITEM),
+                                Pair("Quote", BlockType.QUOTE),
+                                Pair("Callout", BlockType.CALLOUT),
+                                Pair("Code block", BlockType.CODE_BLOCK),
+                            )
                         LazyColumn {
                             items(items) { (label, type) ->
                                 Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            onChangeType(type)
-                                            // Strip out the last '/' slash symbol from input
-                                            val textWithoutSlash = textFieldValue.text.removeSuffix("/")
-                                            onTextChanged(textWithoutSlash)
-                                            showSlashMenu = false
-                                        }
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                onChangeType(type)
+                                                // Strip out the last '/' slash symbol from input
+                                                val textWithoutSlash = textFieldValue.text.removeSuffix("/")
+                                                onTextChanged(textWithoutSlash)
+                                                showSlashMenu = false
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Icon(
                                         imageVector = getBlockIcon(type),
                                         contentDescription = label,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(16.dp),
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(label, fontSize = 13.sp)
@@ -912,25 +966,26 @@ fun BlockEditorItem(
         // Floating Selection Style formatting toolbar (Bold, Italic, Color, Code, custom transformations)
         if (isFocused && textFieldValue.selection.length > 0) {
             Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .offset(y = (-45).dp)
+                modifier =
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .offset(y = (-45).dp),
             ) {
                 Card(
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                    shape = RoundedCornerShape(24.dp)
+                    shape = RoundedCornerShape(24.dp),
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         IconButton(
                             onClick = {
                                 onApplyStyle(StyleType.BOLD, textFieldValue.selection.start, textFieldValue.selection.end)
                             },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp),
                         ) {
                             Icon(Icons.Default.FormatBold, "Bold", modifier = Modifier.size(16.dp))
                         }
@@ -938,7 +993,7 @@ fun BlockEditorItem(
                             onClick = {
                                 onApplyStyle(StyleType.ITALIC, textFieldValue.selection.start, textFieldValue.selection.end)
                             },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp),
                         ) {
                             Icon(Icons.Default.FormatItalic, "Italic", modifier = Modifier.size(16.dp))
                         }
@@ -946,7 +1001,7 @@ fun BlockEditorItem(
                             onClick = {
                                 onApplyStyle(StyleType.UNDERLINE, textFieldValue.selection.start, textFieldValue.selection.end)
                             },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp),
                         ) {
                             Icon(Icons.Default.FormatUnderlined, "Underline", modifier = Modifier.size(16.dp))
                         }
@@ -954,7 +1009,7 @@ fun BlockEditorItem(
                             onClick = {
                                 onApplyStyle(StyleType.CODE, textFieldValue.selection.start, textFieldValue.selection.end)
                             },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp),
                         ) {
                             Icon(Icons.Default.Code, "Code Span", modifier = Modifier.size(16.dp))
                         }
@@ -962,7 +1017,7 @@ fun BlockEditorItem(
                             onClick = {
                                 onApplyStyle(StyleType.TEXT_COLOR_RED, textFieldValue.selection.start, textFieldValue.selection.end)
                             },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp),
                         ) {
                             Icon(Icons.Default.FormatColorText, "Red Text", modifier = Modifier.size(16.dp), tint = Color.Red)
                         }
@@ -970,7 +1025,7 @@ fun BlockEditorItem(
                             onClick = {
                                 onApplyStyle(StyleType.TEXT_COLOR_BLUE, textFieldValue.selection.start, textFieldValue.selection.end)
                             },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp),
                         ) {
                             Icon(Icons.Default.FormatColorText, "Blue Text", modifier = Modifier.size(16.dp), tint = Color(0xFF1B63C2))
                         }
@@ -978,7 +1033,7 @@ fun BlockEditorItem(
                             onClick = {
                                 onApplyStyle(StyleType.TEXT_COLOR_GREEN, textFieldValue.selection.start, textFieldValue.selection.end)
                             },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp),
                         ) {
                             Icon(Icons.Default.FormatColorText, "Green Text", modifier = Modifier.size(16.dp), tint = Color(0xFF2E7D32))
                         }
@@ -986,23 +1041,31 @@ fun BlockEditorItem(
                             onClick = {
                                 onApplyStyle(StyleType.STRIKETHROUGH, textFieldValue.selection.start, textFieldValue.selection.end)
                             },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp),
                         ) {
                             Icon(Icons.Default.FormatStrikethrough, "Strikethrough", modifier = Modifier.size(16.dp))
                         }
                         IconButton(
                             onClick = {
-                                onApplyStyle(StyleType.BACKGROUND_COLOR_YELLOW, textFieldValue.selection.start, textFieldValue.selection.end)
+                                onApplyStyle(
+                                    StyleType.BACKGROUND_COLOR_YELLOW,
+                                    textFieldValue.selection.start,
+                                    textFieldValue.selection.end,
+                                )
                             },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp),
                         ) {
                             Icon(Icons.Default.Highlight, "Yellow Highlight", modifier = Modifier.size(16.dp), tint = Color(0xFFFFF9C4))
                         }
                         IconButton(
                             onClick = {
-                                onApplyStyle(StyleType.BACKGROUND_COLOR_LIGHT_GRAY, textFieldValue.selection.start, textFieldValue.selection.end)
+                                onApplyStyle(
+                                    StyleType.BACKGROUND_COLOR_LIGHT_GRAY,
+                                    textFieldValue.selection.start,
+                                    textFieldValue.selection.end,
+                                )
                             },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp),
                         ) {
                             Icon(Icons.Default.FormatColorFill, "Light Gray Bg", modifier = Modifier.size(16.dp), tint = Color(0xFFEEEEEE))
                         }

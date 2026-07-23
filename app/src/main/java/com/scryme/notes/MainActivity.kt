@@ -21,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,7 +46,7 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.background,
                 ) {
                     MainScreenLayout(viewModel)
                 }
@@ -68,20 +67,21 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
         AnimatedVisibility(
             visible = sidebarVisible,
             enter = slideInHorizontally { -it },
-            exit = slideOutHorizontally { -it }
+            exit = slideOutHorizontally { -it },
         ) {
             Surface(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(260.dp),
+                modifier =
+                    Modifier
+                        .fillMaxHeight()
+                        .width(260.dp),
                 tonalElevation = 1.dp,
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
             ) {
                 WorkspaceScreen(
                     viewModel = viewModel,
                     onNoteSelected = {
                         sidebarVisible = false
-                    }
+                    },
                 )
             }
         }
@@ -89,47 +89,50 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
         // Vertical divider if sidebar is open
         if (sidebarVisible) {
             VerticalDivider(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(1.dp),
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                modifier =
+                    Modifier
+                        .fillMaxHeight()
+                        .width(1.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
             )
         }
 
         // Main Editor Area with Toolbar at the top to toggle sidebar
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface),
         ) {
             // High-fidelity top bar (Mockup inspired)
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (activeNote != null) {
                     // Left back/navigation chevron to deselect and return to Welcome Screen
                     IconButton(
-                        onClick = { viewModel.deselectActiveNote() }
+                        onClick = { viewModel.deselectActiveNote() },
                     ) {
                         Icon(
                             imageVector = Icons.Default.ChevronLeft,
                             contentDescription = "Back",
                             modifier = Modifier.size(28.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 } else {
                     // Left menu toggle if on Welcome Screen
                     IconButton(
-                        onClick = { sidebarVisible = !sidebarVisible }
+                        onClick = { sidebarVisible = !sidebarVisible },
                     ) {
                         Icon(
                             imageVector = if (sidebarVisible) Icons.AutoMirrored.Filled.MenuOpen else Icons.Default.Menu,
                             contentDescription = "Toggle Sidebar",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -141,42 +144,57 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
                     Row(
                         modifier = Modifier.weight(1f),
                         horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         val colors = listOf(Color(0xFFFFCDD2), Color(0xFFC8E6C9), Color(0xFFBBDEFB))
                         val letters = listOf("H", "J", "S")
                         Box(
                             modifier = Modifier.width(64.dp),
-                            contentAlignment = Alignment.CenterStart
+                            contentAlignment = Alignment.CenterStart,
                         ) {
                             Surface(
                                 modifier = Modifier.size(26.dp),
                                 shape = CircleShape,
                                 color = colors[0],
-                                border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White)
+                                border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White),
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Text(letters[0], fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                    Text(
+                                        letters[0],
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
                                 }
                             }
                             Surface(
                                 modifier = Modifier.size(26.dp).offset(x = 16.dp),
                                 shape = CircleShape,
                                 color = colors[1],
-                                border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White)
+                                border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White),
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Text(letters[1], fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                    Text(
+                                        letters[1],
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
                                 }
                             }
                             Surface(
                                 modifier = Modifier.size(26.dp).offset(x = 32.dp),
                                 shape = CircleShape,
                                 color = colors[2],
-                                border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White)
+                                border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White),
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Text(letters[2], fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                    Text(
+                                        letters[2],
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
                                 }
                             }
                         }
@@ -184,52 +202,53 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
 
                     // Done checkmark action button
                     IconButton(
-                        onClick = { viewModel.setFocusedBlock(null) }
+                        onClick = { viewModel.setFocusedBlock(null) },
                     ) {
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = "Save/Done",
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
                         )
                     }
 
                     // More Options "..." button
                     IconButton(
-                        onClick = { showBottomSheet = true }
+                        onClick = { showBottomSheet = true },
                     ) {
                         Icon(
                             imageVector = Icons.Default.MoreHoriz,
                             contentDescription = "More Options",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
                         )
                     }
                 } else {
                     // Standard Scryme Notes Title if no note is active
                     Text(
                         text = "Scryme Notes",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            ),
                         modifier = Modifier.weight(1f),
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
 
             HorizontalDivider(
                 modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
             )
 
             // Editor Screen View
             NoteEditorScreen(
                 viewModel = viewModel,
                 onOpenSidebar = { sidebarVisible = true },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -240,7 +259,7 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
             onDismissRequest = { showBottomSheet = false },
             dragHandle = { BottomSheetDefaults.DragHandle() },
             containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
         ) {
             BottomSheetContent(
                 note = activeNote!!,
@@ -256,7 +275,7 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
                         viewModel.createRootNote(it.title + " (Copy)")
                     }
                     showBottomSheet = false
-                }
+                },
             )
         }
     }
@@ -267,55 +286,60 @@ fun BottomSheetContent(
     note: Note,
     onDismiss: () -> Unit,
     onDeleteNote: () -> Unit,
-    onDuplicateNote: () -> Unit
+    onDuplicateNote: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp)
-            .navigationBarsPadding(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 8.dp)
+                .navigationBarsPadding(),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // Mockup Row of 3 Cards: Image, Voice, Share
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            val cards = listOf(
-                Triple("Image", Icons.Default.Image, {}),
-                Triple("Voice", Icons.Default.Mic, {}),
-                Triple("Share", Icons.Default.Share, {})
-            )
+            val cards =
+                listOf(
+                    Triple("Image", Icons.Default.Image, {}),
+                    Triple("Voice", Icons.Default.Mic, {}),
+                    Triple("Share", Icons.Default.Share, {}),
+                )
             cards.forEach { (label, icon, onClick) ->
                 Card(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(72.dp)
-                        .clickable { onClick() },
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                    ),
-                    shape = RoundedCornerShape(16.dp)
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .height(72.dp)
+                            .clickable { onClick() },
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        ),
+                    shape = RoundedCornerShape(16.dp),
                 ) {
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.Center,
                     ) {
                         Icon(
                             imageVector = icon,
                             contentDescription = label,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = label,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
@@ -325,31 +349,33 @@ fun BottomSheetContent(
         Spacer(modifier = Modifier.height(8.dp))
 
         // Vertical Option Rows
-        val options = listOf(
-            Triple("Pin", Icons.Default.PushPin, {}),
-            Triple("Add Thumbnail", Icons.Default.AddPhotoAlternate, {}),
-            Triple("Label", Icons.Default.Label, {}),
-            Triple("Send", Icons.Default.Send, {}),
-            Triple("Make a Copy", Icons.Default.ContentCopy, onDuplicateNote),
-            Triple("Lock Note", Icons.Default.Lock, {}),
-            Triple("Delete Note", Icons.Default.Delete, onDeleteNote)
-        )
+        val options =
+            listOf(
+                Triple("Pin", Icons.Default.PushPin, {}),
+                Triple("Add Thumbnail", Icons.Default.AddPhotoAlternate, {}),
+                Triple("Label", Icons.Default.Label, {}),
+                Triple("Send", Icons.Default.Send, {}),
+                Triple("Make a Copy", Icons.Default.ContentCopy, onDuplicateNote),
+                Triple("Lock Note", Icons.Default.Lock, {}),
+                Triple("Delete Note", Icons.Default.Delete, onDeleteNote),
+            )
 
         options.forEach { (label, icon, onClick) ->
             val isDelete = label == "Delete Note"
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onClick() }
-                    .padding(vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onClick() }
+                        .padding(vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = label,
                     tint = if (isDelete) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
@@ -357,24 +383,24 @@ fun BottomSheetContent(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = if (isDelete) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
 
                 if (label == "Label") {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
                             text = "Work",
                             fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                         )
                         Icon(
                             imageVector = Icons.Default.ChevronRight,
                             contentDescription = "label next",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(16.dp),
                         )
                     }
                 }
@@ -392,7 +418,7 @@ fun BottomSheetContent(
             text = "Last Edited $lastEditedStr By Harrison..",
             fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 8.dp),
         )
     }
 }

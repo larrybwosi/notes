@@ -1,0 +1,12 @@
+root = true
+
+[*.{kt,kts}]
+indent_size = 4
+indent_style = space
+max_line_length = off
+
+# Disable or ignore specific rules
+ktlint_function_naming_ignore_when_annotated_with = Composable
+ktlint_standard_function-naming = disabled
+ktlint_standard_no-wildcard-imports = disabled
+ktlint_standard_value-parameter-comment = disabled

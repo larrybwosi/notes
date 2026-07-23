@@ -11,7 +11,10 @@ import com.scryme.notes.domain.model.InlineStyleSpan
 import com.scryme.notes.domain.model.StyleType
 
 object RichTextTransformer {
-    fun toAnnotatedString(text: String, inlineStyles: List<InlineStyleSpan>): AnnotatedString {
+    fun toAnnotatedString(
+        text: String,
+        inlineStyles: List<InlineStyleSpan>,
+    ): AnnotatedString {
         val builder = AnnotatedString.Builder(text)
 
         for (span in inlineStyles) {
@@ -34,11 +37,12 @@ object RichTextTransformer {
             StyleType.ITALIC -> SpanStyle(fontStyle = FontStyle.Italic)
             StyleType.UNDERLINE -> SpanStyle(textDecoration = TextDecoration.Underline)
             StyleType.STRIKETHROUGH -> SpanStyle(textDecoration = TextDecoration.LineThrough)
-            StyleType.CODE -> SpanStyle(
-                fontFamily = FontFamily.Monospace,
-                background = Color(0xFFF0F0F0),
-                color = Color(0xFFE91E63)
-            )
+            StyleType.CODE ->
+                SpanStyle(
+                    fontFamily = FontFamily.Monospace,
+                    background = Color(0xFFF0F0F0),
+                    color = Color(0xFFE91E63),
+                )
             StyleType.TEXT_COLOR_RED -> SpanStyle(color = Color(0xFFD11A2A))
             StyleType.TEXT_COLOR_BLUE -> SpanStyle(color = Color(0xFF1B63C2))
             StyleType.TEXT_COLOR_GREEN -> SpanStyle(color = Color(0xFF2E7D32))
