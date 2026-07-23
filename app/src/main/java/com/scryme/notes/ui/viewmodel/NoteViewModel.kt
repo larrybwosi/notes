@@ -18,7 +18,7 @@ import java.util.UUID
 
 class NoteViewModel(
     private val repository: NoteRepository,
-    private val context: android.content.Context? = null
+    private val context: android.content.Context? = null,
 ) : ViewModel() {
     private val _allNotes = MutableStateFlow<List<Note>>(emptyList())
     val allNotes: StateFlow<List<Note>> = _allNotes.asStateFlow()
@@ -114,74 +114,85 @@ class NoteViewModel(
     private fun scheduleDailyReminder() {
         val context = context ?: return
         val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as? android.app.AlarmManager ?: return
-        val intent = android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
-            action = "DAILY_REMINDER"
-        }
-        val pendingIntent = android.app.PendingIntent.getBroadcast(
-            context,
-            999,
-            intent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-        )
+        val intent =
+            android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
+                action = "DAILY_REMINDER"
+            }
+        val pendingIntent =
+            android.app.PendingIntent.getBroadcast(
+                context,
+                999,
+                intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE,
+            )
 
         val timeParts = _dailyReminderTime.value.split(":")
         if (timeParts.size != 2) return
         val hour = timeParts[0].toIntOrNull() ?: 9
         val minute = timeParts[1].toIntOrNull() ?: 0
 
-        val calendar = java.util.Calendar.getInstance().apply {
-            timeInMillis = System.currentTimeMillis()
-            set(java.util.Calendar.HOUR_OF_DAY, hour)
-            set(java.util.Calendar.MINUTE, minute)
-            set(java.util.Calendar.SECOND, 0)
-            set(java.util.Calendar.MILLISECOND, 0)
-            if (timeInMillis <= System.currentTimeMillis()) {
-                add(java.util.Calendar.DAY_OF_YEAR, 1)
+        val calendar =
+            java.util.Calendar.getInstance().apply {
+                timeInMillis = System.currentTimeMillis()
+                set(java.util.Calendar.HOUR_OF_DAY, hour)
+                set(java.util.Calendar.MINUTE, minute)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+                if (timeInMillis <= System.currentTimeMillis()) {
+                    add(java.util.Calendar.DAY_OF_YEAR, 1)
+                }
             }
-        }
 
         alarmManager.setAndAllowWhileIdle(
             android.app.AlarmManager.RTC_WAKEUP,
             calendar.timeInMillis,
-            pendingIntent
+            pendingIntent,
         )
     }
 
     private fun cancelDailyReminder() {
         val context = context ?: return
         val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as? android.app.AlarmManager ?: return
-        val intent = android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
-            action = "DAILY_REMINDER"
-        }
-        val pendingIntent = android.app.PendingIntent.getBroadcast(
-            context,
-            999,
-            intent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-        )
+        val intent =
+            android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
+                action = "DAILY_REMINDER"
+            }
+        val pendingIntent =
+            android.app.PendingIntent.getBroadcast(
+                context,
+                999,
+                intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE,
+            )
         alarmManager.cancel(pendingIntent)
     }
 
-    fun setNoteReminder(noteId: String, noteTitle: String, timestamp: Long) {
+    fun setNoteReminder(
+        noteId: String,
+        noteTitle: String,
+        timestamp: Long,
+    ) {
         val context = context ?: return
         val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as? android.app.AlarmManager ?: return
-        val intent = android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
-            action = "NOTE_REMINDER"
-            putExtra("NOTE_ID", noteId)
-            putExtra("NOTE_TITLE", noteTitle)
-        }
+        val intent =
+            android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
+                action = "NOTE_REMINDER"
+                putExtra("NOTE_ID", noteId)
+                putExtra("NOTE_TITLE", noteTitle)
+            }
         val requestCode = noteId.hashCode()
-        val pendingIntent = android.app.PendingIntent.getBroadcast(
-            context,
-            requestCode,
-            intent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-        )
+        val pendingIntent =
+            android.app.PendingIntent.getBroadcast(
+                context,
+                requestCode,
+                intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE,
+            )
 
         alarmManager.setAndAllowWhileIdle(
             android.app.AlarmManager.RTC_WAKEUP,
             timestamp,
-            pendingIntent
+            pendingIntent,
         )
         prefs?.edit()?.putLong("reminder_note_$noteId", timestamp)?.apply()
     }
@@ -189,16 +200,18 @@ class NoteViewModel(
     fun cancelNoteReminder(noteId: String) {
         val context = context ?: return
         val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as? android.app.AlarmManager ?: return
-        val intent = android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
-            action = "NOTE_REMINDER"
-        }
+        val intent =
+            android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
+                action = "NOTE_REMINDER"
+            }
         val requestCode = noteId.hashCode()
-        val pendingIntent = android.app.PendingIntent.getBroadcast(
-            context,
-            requestCode,
-            intent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-        )
+        val pendingIntent =
+            android.app.PendingIntent.getBroadcast(
+                context,
+                requestCode,
+                intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE,
+            )
         alarmManager.cancel(pendingIntent)
         prefs?.edit()?.remove("reminder_note_$noteId")?.apply()
     }
@@ -633,7 +646,7 @@ class NoteViewModel(
 
 class NoteViewModelFactory(
     private val repository: NoteRepository,
-    private val context: android.content.Context
+    private val context: android.content.Context,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(NoteViewModel::class.java)) {

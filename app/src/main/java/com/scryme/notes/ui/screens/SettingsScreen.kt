@@ -103,10 +103,11 @@ fun SettingsScreen(
                         placeholder = { Text("Enter your name") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                        )
+                        colors =
+                            OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            ),
                     )
                 }
             }
@@ -193,9 +194,10 @@ fun SettingsScreen(
             // Section 1.5: Notifications & Reminders
             SettingsSection(title = "Notifications & Reminders") {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -221,9 +223,10 @@ fun SettingsScreen(
                 if (dailyReminderEnabled) {
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -259,7 +262,7 @@ fun SettingsScreen(
                                             val timeStr = String.format("%02d:%02d", hour, minute)
                                             viewModel.setDailyReminderTime(timeStr)
                                             showTimeDialog = false
-                                        }
+                                        },
                                     ) {
                                         Text("Set Time", fontWeight = FontWeight.Bold)
                                     }
@@ -274,7 +277,7 @@ fun SettingsScreen(
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
+                                        verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Text("Hour: ", fontWeight = FontWeight.Bold)
                                         IconButton(onClick = { hour = (hour + 23) % 24 }) {
@@ -294,7 +297,7 @@ fun SettingsScreen(
                                             Icon(Icons.Default.Add, "plus")
                                         }
                                     }
-                                }
+                                },
                             )
                         }
                     }

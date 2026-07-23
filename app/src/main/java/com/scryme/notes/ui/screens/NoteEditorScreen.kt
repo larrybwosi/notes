@@ -1,6 +1,7 @@
 package com.scryme.notes.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -11,10 +12,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,8 +33,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.border
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -71,62 +70,68 @@ fun NoteEditorScreen(
     var activeSelection by remember { mutableStateOf<TextRange?>(null) }
 
     if (activeNote == null) {
-        val recentlyAdded = remember(allNotes) {
-            allNotes.sortedByDescending { it.updatedAt }
-        }
+        val recentlyAdded =
+            remember(allNotes) {
+                allNotes.sortedByDescending { it.updatedAt }
+            }
 
         val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
-        val greeting = when {
-            hour < 12 -> "Good Morning"
-            hour < 17 -> "Good Afternoon"
-            else -> "Good Evening"
-        }
+        val greeting =
+            when {
+                hour < 12 -> "Good Morning"
+                hour < 17 -> "Good Afternoon"
+                else -> "Good Evening"
+            }
 
         Column(
-            modifier = modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 24.dp),
+            modifier =
+                modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 24.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column {
                     Text(
                         text = "$greeting, $userName",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontSize = 24.sp
-                        )
+                        style =
+                            MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontSize = 24.sp,
+                            ),
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Let's capture something new today.",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                        )
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                            ),
                     )
                 }
 
                 IconButton(
                     onClick = { viewModel.createRootNote() },
-                    modifier = Modifier
-                        .size(48.dp)
-                        .background(MaterialTheme.colorScheme.surface, CircleShape)
-                        .border(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                            shape = CircleShape
-                        ),
+                    modifier =
+                        Modifier
+                            .size(48.dp)
+                            .background(MaterialTheme.colorScheme.surface, CircleShape)
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                shape = CircleShape,
+                            ),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Create new note",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -136,24 +141,26 @@ fun NoteEditorScreen(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
+                verticalAlignment = Alignment.Bottom,
             ) {
                 Text(
                     text = "Recently Added",
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = 28.sp
-                    )
+                    style =
+                        MaterialTheme.typography.headlineLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontSize = 28.sp,
+                        ),
                 )
 
                 Text(
                     text = "${allNotes.size} Notes",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        fontWeight = FontWeight.Medium
-                    ),
-                    modifier = Modifier.padding(bottom = 2.dp)
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            fontWeight = FontWeight.Medium,
+                        ),
+                    modifier = Modifier.padding(bottom = 2.dp),
                 )
             }
 
@@ -161,41 +168,44 @@ fun NoteEditorScreen(
 
             if (recentlyAdded.isEmpty()) {
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 12.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = androidx.compose.foundation.BorderStroke(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                    )
+                    border =
+                        androidx.compose.foundation.BorderStroke(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                        ),
                 ) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.Center,
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Empty Notes",
                             modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = "No notes captured yet",
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Tap the edit icon above to write your first beautiful note.",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }
@@ -203,10 +213,11 @@ fun NoteEditorScreen(
                 val chunkedNotes = recentlyAdded.chunked(2)
                 chunkedNotes.forEach { rowNotes ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         rowNotes.forEach { note ->
                             Box(modifier = Modifier.weight(1f)) {
@@ -1227,57 +1238,63 @@ private fun getBlockIcon(type: BlockType): androidx.compose.ui.graphics.vector.I
 @Composable
 fun NoteGridCard(
     note: com.scryme.notes.domain.model.Note,
-    viewModel: NoteViewModel
+    viewModel: NoteViewModel,
 ) {
     val tags = listOf("Random", "Work", "Goals", "Personal", "Journal")
-    val tag = remember(note.id) {
-        tags[kotlin.math.abs(note.id.hashCode()) % tags.size]
-    }
+    val tag =
+        remember(note.id) {
+            tags[kotlin.math.abs(note.id.hashCode()) % tags.size]
+        }
 
-    val (tagBg, tagText) = when (tag) {
-        "Work" -> Pair(Color(0xFFE0F2FE), Color(0xFF0369A1)) // Blue
-        "Personal" -> Pair(Color(0xFFFCE7F3), Color(0xFFBE185D)) // Pink
-        "Goals" -> Pair(Color(0xFFDCFCE7), Color(0xFF15803D)) // Green
-        "Journal" -> Pair(Color(0xFFF3E8FF), Color(0xFF6B21A8)) // Purple
-        else -> Pair(Color(0xFFF1F5F9), Color(0xFF475569)) // Gray
-    }
+    val (tagBg, tagText) =
+        when (tag) {
+            "Work" -> Pair(Color(0xFFE0F2FE), Color(0xFF0369A1)) // Blue
+            "Personal" -> Pair(Color(0xFFFCE7F3), Color(0xFFBE185D)) // Pink
+            "Goals" -> Pair(Color(0xFFDCFCE7), Color(0xFF15803D)) // Green
+            "Journal" -> Pair(Color(0xFFF3E8FF), Color(0xFF6B21A8)) // Purple
+            else -> Pair(Color(0xFFF1F5F9), Color(0xFF475569)) // Gray
+        }
 
-    val previewText = remember(note.blocks) {
-        note.blocks.joinToString(" ") { it.text }.trim()
-    }
+    val previewText =
+        remember(note.blocks) {
+            note.blocks.joinToString(" ") { it.text }.trim()
+        }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { viewModel.selectNote(note.id) },
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { viewModel.selectNote(note.id) },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        border =
+            androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+            ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Surface(
                     color = tagBg,
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
                 ) {
                     Text(
                         text = tag,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = tagText,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                     )
                 }
 
@@ -1285,7 +1302,7 @@ fun NoteGridCard(
                     imageVector = Icons.Default.NorthEast,
                     contentDescription = "Open Note",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(16.dp),
                 )
             }
 
@@ -1293,32 +1310,36 @@ fun NoteGridCard(
 
             if (tag == "Random" && note.title.contains("Pause", ignoreCase = true)) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     val colors = listOf(Color(0xFFE2E8F0), Color(0xFFCBD5E1), Color(0xFF94A3B8))
                     colors.forEach { c ->
                         Box(
-                            modifier = Modifier
-                                .size(width = 30.dp, height = 20.dp)
-                                .background(c, RoundedCornerShape(4.dp))
+                            modifier =
+                                Modifier
+                                    .size(width = 30.dp, height = 20.dp)
+                                    .background(c, RoundedCornerShape(4.dp)),
                         )
                     }
                 }
             } else if (tag == "Goals" && note.title.contains("Goals", ignoreCase = true)) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .background(Color(0xFFFEF3C7), RoundedCornerShape(6.dp)),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .size(24.dp)
+                                .background(Color(0xFFFEF3C7), RoundedCornerShape(6.dp)),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text("☕", fontSize = 12.sp)
                     }
@@ -1332,7 +1353,7 @@ fun NoteGridCard(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -1343,7 +1364,7 @@ fun NoteGridCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                 lineHeight = 16.sp,
                 maxLines = 3,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -1351,7 +1372,7 @@ fun NoteGridCard(
             Text(
                 text = getElapsedTimeString(note.updatedAt),
                 fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
             )
         }
     }

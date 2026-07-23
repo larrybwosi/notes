@@ -59,15 +59,16 @@ class MainActivity : ComponentActivity() {
         }
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            val permissionCheck = androidx.core.content.ContextCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.POST_NOTIFICATIONS
-            )
+            val permissionCheck =
+                androidx.core.content.ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.POST_NOTIFICATIONS,
+                )
             if (permissionCheck != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 androidx.core.app.ActivityCompat.requestPermissions(
                     this,
                     arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                    101
+                    101,
                 )
             }
         }
@@ -447,7 +448,7 @@ fun BottomSheetContent(
                                 showReminderDialog = false
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
                         ) {
                             Text("In 10 Seconds (Fast Test)")
                         }
@@ -457,7 +458,7 @@ fun BottomSheetContent(
                                 viewModel.setNoteReminder(note.id, note.title, System.currentTimeMillis() + 60_000L)
                                 showReminderDialog = false
                             },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text("In 1 Minute")
                         }
@@ -467,7 +468,7 @@ fun BottomSheetContent(
                                 viewModel.setNoteReminder(note.id, note.title, System.currentTimeMillis() + 3600_000L)
                                 showReminderDialog = false
                             },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text("In 1 Hour")
                         }
@@ -477,7 +478,7 @@ fun BottomSheetContent(
                                 viewModel.setNoteReminder(note.id, note.title, System.currentTimeMillis() + 24 * 3600_000L)
                                 showReminderDialog = false
                             },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text("In 24 Hours")
                         }
@@ -489,13 +490,13 @@ fun BottomSheetContent(
                                     showReminderDialog = false
                                 },
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer)
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer),
                             ) {
                                 Text("Cancel Reminder")
                             }
                         }
                     }
-                }
+                },
             )
         }
 
