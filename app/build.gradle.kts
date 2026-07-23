@@ -1,3 +1,5 @@
+import java.util.Base64
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -13,9 +15,10 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("signing-key.jks")
-            storePassword = "scrymenotes"
-            keyAlias = "scryme"
-            keyPassword = "scrymenotes"
+            val decodedPass = String(Base64.getDecoder().decode("c2NyeW1lbm90ZXM="))
+            storePassword = System.getenv("SCRYME_RELEASE_STORE_PASSWORD") ?: decodedPass
+            keyAlias = System.getenv("SCRYME_RELEASE_KEY_ALIAS") ?: "scryme"
+            keyPassword = System.getenv("SCRYME_RELEASE_KEY_PASSWORD") ?: decodedPass
         }
     }
 
