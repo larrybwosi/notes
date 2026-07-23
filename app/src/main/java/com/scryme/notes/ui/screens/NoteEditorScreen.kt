@@ -30,6 +30,7 @@ import androidx.compose.ui.input.key.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +46,17 @@ import com.scryme.notes.domain.model.BlockType
 import com.scryme.notes.domain.model.StyleType
 import com.scryme.notes.ui.components.RichTextTransformer
 import com.scryme.notes.ui.viewmodel.NoteViewModel
+import com.scryme.notes.R
+
+val InterFontFamily = FontFamily(
+    Font(R.font.inter_regular, FontWeight.Normal),
+    Font(R.font.inter_bold, FontWeight.Bold)
+)
+
+val RobotoFontFamily = FontFamily(
+    Font(R.font.roboto_regular, FontWeight.Normal),
+    Font(R.font.roboto_bold, FontWeight.Bold)
+)
 
 @Composable
 fun NoteEditorScreen(
@@ -63,6 +75,8 @@ fun NoteEditorScreen(
         when (fontFamilyPref) {
             "Serif" -> FontFamily.Serif
             "Monospace" -> FontFamily.Monospace
+            "Inter" -> InterFontFamily
+            "Roboto" -> RobotoFontFamily
             else -> FontFamily.Default
         }
 
@@ -72,9 +86,15 @@ fun NoteEditorScreen(
     var activeSelection by remember { mutableStateOf<TextRange?>(null) }
 
     if (activeNote == null) {
+        val context = androidx.compose.ui.platform.LocalContext.current
         val recentlyAdded =
             remember(allNotes) {
-                allNotes.sortedByDescending { it.updatedAt }
+                val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                val pinnedSet = prefs.getStringSet("pinned_notes", emptySet()) ?: emptySet()
+                allNotes.sortedWith(
+                    compareByDescending<com.scryme.notes.domain.model.Note> { pinnedSet.contains(it.id) }
+                        .thenByDescending { it.updatedAt }
+                )
             }
 
         val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
@@ -258,6 +278,89 @@ fun NoteEditorScreen(
 
     val note = activeNote!!
 
+    // Lock Screen implementation
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isNoteLocked = remember(note.id) {
+        val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+        prefs.getBoolean("locked_note_${note.id}", false)
+    }
+    var isUnlockedSession by remember(note.id) { mutableStateOf(false) }
+
+    if (isNoteLocked && !isUnlockedSession) {
+        var pinValue by remember { mutableStateOf("") }
+        var isError by remember { mutableStateOf(false) }
+
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Lock,
+                contentDescription = "Locked",
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "This Note is Locked",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Please enter the 4-digit passcode to view and edit.",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedTextField(
+                value = pinValue,
+                onValueChange = {
+                    pinValue = it
+                    isError = false
+                },
+                singleLine = true,
+                placeholder = { Text("Enter PIN") },
+                isError = isError,
+                modifier = Modifier.width(150.dp),
+            )
+
+            if (isError) {
+                Text(
+                    text = "Incorrect PIN!",
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = {
+                    val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                    val expectedPin = prefs.getString("lock_pin_note_${note.id}", "1234")
+                    if (pinValue == expectedPin) {
+                        isUnlockedSession = true
+                    } else {
+                        isError = true
+                    }
+                },
+                modifier = Modifier.width(150.dp),
+            ) {
+                Text("Unlock")
+            }
+        }
+        return
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         Column(
             modifier =
@@ -291,6 +394,19 @@ fun NoteEditorScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            // Emoji Thumbnail if exists
+            val thumbnailEmoji = remember(note.id, note.updatedAt) {
+                val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                prefs.getString("thumbnail_note_${note.id}", null)
+            }
+            if (thumbnailEmoji != null) {
+                Text(
+                    text = thumbnailEmoji,
+                    fontSize = 48.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
 
             // Large Borderless Title Editor
             var titleText by remember(note.id) { mutableStateOf(note.title) }
@@ -857,33 +973,43 @@ fun BlockEditorItem(
             // Decorators based on BlockType with polished alignment
             when (block.type) {
                 BlockType.BULLETED_LIST_ITEM -> {
-                    Text(
-                        "•",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(end = 12.dp, top = 0.dp),
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .padding(end = 8.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "•",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
                 }
                 BlockType.NUMBERED_LIST_ITEM -> {
                     Text(
                         "$sequenceNumber.",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(end = 10.dp, top = 2.dp),
+                        modifier = Modifier.padding(end = 10.dp, top = 0.dp),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
                 BlockType.TODO_LIST_ITEM -> {
                     val isChecked = block.properties["checked"] == "true"
-                    Checkbox(
-                        checked = isChecked,
-                        onCheckedChange = { onToggleTodo() },
-                        modifier =
-                            Modifier
-                                .size(24.dp)
-                                .padding(end = 8.dp),
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .padding(end = 6.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Checkbox(
+                            checked = isChecked,
+                            onCheckedChange = { onToggleTodo() },
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
                 }
                 BlockType.CALLOUT -> {
                     Text(
@@ -1262,10 +1388,14 @@ fun NoteGridCard(
     note: com.scryme.notes.domain.model.Note,
     viewModel: NoteViewModel,
 ) {
-    val tags = listOf("Random", "Work", "Goals", "Personal", "Journal")
+    val context = androidx.compose.ui.platform.LocalContext.current
     val tag =
-        remember(note.id) {
-            tags[kotlin.math.abs(note.id.hashCode()) % tags.size]
+        remember(note.id, note.updatedAt) {
+            val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+            prefs.getString("label_note_${note.id}", null) ?: run {
+                val tags = listOf("Random", "Work", "Goals", "Personal", "Journal")
+                tags[kotlin.math.abs(note.id.hashCode()) % tags.size]
+            }
         }
 
     val (tagBg, tagText) =
@@ -1307,12 +1437,16 @@ fun NoteGridCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                val thumbnailEmoji = remember(note.id) {
+                    val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                    prefs.getString("thumbnail_note_${note.id}", null)
+                }
                 Surface(
                     color = tagBg,
                     shape = RoundedCornerShape(8.dp),
                 ) {
                     Text(
-                        text = tag,
+                        text = if (thumbnailEmoji != null) "$thumbnailEmoji $tag" else tag,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = tagText,
@@ -1320,12 +1454,39 @@ fun NoteGridCard(
                     )
                 }
 
-                Icon(
-                    imageVector = Icons.Default.NorthEast,
-                    contentDescription = "Open Note",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier.size(16.dp),
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    val isPinned = remember(note.id) {
+                        val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                        val pinnedSet = prefs.getStringSet("pinned_notes", emptySet()) ?: emptySet()
+                        pinnedSet.contains(note.id)
+                    }
+                    val isLocked = remember(note.id) {
+                        val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                        prefs.getBoolean("locked_note_${note.id}", false)
+                    }
+                    if (isPinned) {
+                        Icon(
+                            imageVector = Icons.Default.PushPin,
+                            contentDescription = "Pinned",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(14.dp),
+                        )
+                    }
+                    if (isLocked) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Locked",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.size(14.dp),
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Default.NorthEast,
+                        contentDescription = "Open Note",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
