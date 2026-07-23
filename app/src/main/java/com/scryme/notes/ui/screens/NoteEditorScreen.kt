@@ -274,10 +274,26 @@ fun NoteEditorScreen(
                             viewModel.updateBlockText(block.id, text)
                         },
                         onEnterPressed = { nextBlockText ->
-                            viewModel.insertBlockAfter(block.id, BlockType.PARAGRAPH, nextBlockText)
+                            val isListType = block.type == BlockType.BULLETED_LIST_ITEM ||
+                                    block.type == BlockType.NUMBERED_LIST_ITEM ||
+                                    block.type == BlockType.TODO_LIST_ITEM
+                            if (isListType && block.text.isEmpty()) {
+                                viewModel.changeBlockType(block.id, BlockType.PARAGRAPH)
+                            } else if (isListType) {
+                                viewModel.insertBlockAfter(block.id, block.type, nextBlockText)
+                            } else {
+                                viewModel.insertBlockAfter(block.id, BlockType.PARAGRAPH, nextBlockText)
+                            }
                         },
                         onBackspaceOnEmpty = {
-                            viewModel.deleteBlock(block.id)
+                            val isListType = block.type == BlockType.BULLETED_LIST_ITEM ||
+                                    block.type == BlockType.NUMBERED_LIST_ITEM ||
+                                    block.type == BlockType.TODO_LIST_ITEM
+                            if (isListType) {
+                                viewModel.changeBlockType(block.id, BlockType.PARAGRAPH)
+                            } else {
+                                viewModel.deleteBlock(block.id)
+                            }
                         },
                         onToggleTodo = {
                             viewModel.toggleTodoBlockChecked(block.id)
@@ -301,184 +317,323 @@ fun NoteEditorScreen(
             }
         }
 
-        // Horizontal Scrollable Obsidian-Style Toolbar at the Bottom
+        // Horizontal Scrollable Obsidian-Style Toolbar and Keyboard Accessory Bar
         if (focusedBlockId != null) {
             val focusedBlock = note.blocks.find { it.id == focusedBlockId }
             if (focusedBlock != null) {
-                Card(
+                var showFormattingBar by remember { mutableStateOf(true) }
+                var showBlocksMenu by remember { mutableStateOf(false) }
+
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
+                        .navigationBarsPadding()
+                        .imePadding()
                         .padding(horizontal = 8.dp, vertical = 4.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp)
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Row(
+                    // 1. Horizontal Scrollable Formatting Toolbar
+                    if (showFormattingBar) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 6.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState())
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                // Quick Type Converter Chips
+                                val types = listOf(
+                                    Triple("Text", BlockType.PARAGRAPH, Icons.Default.Title),
+                                    Triple("H1", BlockType.HEADER_1, Icons.Default.LooksOne),
+                                    Triple("H2", BlockType.HEADER_2, Icons.Default.LooksTwo),
+                                    Triple("H3", BlockType.HEADER_3, Icons.Default.Looks3),
+                                    Triple("Todo", BlockType.TODO_LIST_ITEM, Icons.Default.CheckBox),
+                                    Triple("Bullet", BlockType.BULLETED_LIST_ITEM, Icons.AutoMirrored.Filled.FormatListBulleted),
+                                    Triple("Number", BlockType.NUMBERED_LIST_ITEM, Icons.Default.FormatListNumbered),
+                                    Triple("Quote", BlockType.QUOTE, Icons.Default.FormatQuote),
+                                    Triple("Callout", BlockType.CALLOUT, Icons.Default.Lightbulb),
+                                    Triple("Code", BlockType.CODE_BLOCK, Icons.Default.Code)
+                                )
+
+                                types.forEach { (label, blockType, icon) ->
+                                    val isSelectedType = focusedBlock.type == blockType
+                                    FilterChip(
+                                        selected = isSelectedType,
+                                        onClick = { viewModel.changeBlockType(focusedBlock.id, blockType) },
+                                        label = { Text(label, fontSize = 12.sp) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = icon,
+                                                contentDescription = label,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                        },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    )
+                                }
+
+                                VerticalDivider(modifier = Modifier.height(24.dp))
+
+                                // Formatting Actions
+                                val textRange = activeSelection ?: TextRange(0, focusedBlock.text.length)
+                                val start = textRange.start
+                                val end = textRange.end
+
+                                IconButton(
+                                    onClick = {
+                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BOLD, start, end)
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(Icons.Default.FormatBold, "Bold", modifier = Modifier.size(18.dp))
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.ITALIC, start, end)
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(Icons.Default.FormatItalic, "Italic", modifier = Modifier.size(18.dp))
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.UNDERLINE, start, end)
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(Icons.Default.FormatUnderlined, "Underline", modifier = Modifier.size(18.dp))
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.STRIKETHROUGH, start, end)
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(Icons.Default.FormatStrikethrough, "Strikethrough", modifier = Modifier.size(18.dp))
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.CODE, start, end)
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(Icons.Default.Code, "Code Span", modifier = Modifier.size(18.dp))
+                                }
+
+                                VerticalDivider(modifier = Modifier.height(24.dp))
+
+                                // Text Colors
+                                IconButton(
+                                    onClick = {
+                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.TEXT_COLOR_RED, start, end)
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(Icons.Default.FormatColorText, "Red Text", modifier = Modifier.size(18.dp), tint = Color.Red)
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.TEXT_COLOR_BLUE, start, end)
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(Icons.Default.FormatColorText, "Blue Text", modifier = Modifier.size(18.dp), tint = Color(0xFF1B63C2))
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.TEXT_COLOR_GREEN, start, end)
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(Icons.Default.FormatColorText, "Green Text", modifier = Modifier.size(18.dp), tint = Color(0xFF2E7D32))
+                                }
+
+                                VerticalDivider(modifier = Modifier.height(24.dp))
+
+                                // Highlights/Backgrounds
+                                IconButton(
+                                    onClick = {
+                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BACKGROUND_COLOR_YELLOW, start, end)
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(Icons.Default.Highlight, "Yellow Highlight", modifier = Modifier.size(18.dp), tint = Color(0xFFFFF9C4))
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BACKGROUND_COLOR_LIGHT_GRAY, start, end)
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(Icons.Default.FormatColorFill, "Light Gray Bg", modifier = Modifier.size(18.dp), tint = Color(0xFFEEEEEE))
+                                }
+
+                                VerticalDivider(modifier = Modifier.height(24.dp))
+
+                                // Add Block & Delete Block Actions
+                                IconButton(
+                                    onClick = {
+                                        viewModel.insertBlockAfter(focusedBlock.id, BlockType.PARAGRAPH, "")
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(Icons.Default.AddCircleOutline, "Add Block Below", modifier = Modifier.size(18.dp))
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        viewModel.deleteBlock(focusedBlock.id)
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(Icons.Default.Delete, "Delete Block", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
+                    }
+
+                    // 2. Mockup 5-Tool Keyboard Accessory Bar
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Quick Type Converter Chips
-                        val types = listOf(
-                            Triple("Text", BlockType.PARAGRAPH, Icons.Default.Title),
-                            Triple("H1", BlockType.HEADER_1, Icons.Default.LooksOne),
-                            Triple("H2", BlockType.HEADER_2, Icons.Default.LooksTwo),
-                            Triple("H3", BlockType.HEADER_3, Icons.Default.Looks3),
-                            Triple("Todo", BlockType.TODO_LIST_ITEM, Icons.Default.CheckBox),
-                            Triple("Bullet", BlockType.BULLETED_LIST_ITEM, Icons.AutoMirrored.Filled.FormatListBulleted),
-                            Triple("Number", BlockType.NUMBERED_LIST_ITEM, Icons.Default.FormatListNumbered),
-                            Triple("Quote", BlockType.QUOTE, Icons.Default.FormatQuote),
-                            Triple("Callout", BlockType.CALLOUT, Icons.Default.Lightbulb),
-                            Triple("Code", BlockType.CODE_BLOCK, Icons.Default.Code)
+                            .height(50.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        shape = RoundedCornerShape(25.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                         )
-
-                        types.forEach { (label, blockType, icon) ->
-                            val isSelectedType = focusedBlock.type == blockType
-                            FilterChip(
-                                selected = isSelectedType,
-                                onClick = { viewModel.changeBlockType(focusedBlock.id, blockType) },
-                                label = { Text(label, fontSize = 12.sp) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = icon,
-                                        contentDescription = label,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            // Pen/Scribble: Converts to/from CALLOUT
+                            IconButton(
+                                onClick = {
+                                    val newType = if (focusedBlock.type == BlockType.CALLOUT) BlockType.PARAGRAPH else BlockType.CALLOUT
+                                    viewModel.changeBlockType(focusedBlock.id, newType)
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Brush,
+                                    contentDescription = "Scribble/Callout",
+                                    tint = if (focusedBlock.type == BlockType.CALLOUT) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                            )
-                        }
+                            }
 
-                        VerticalDivider(modifier = Modifier.height(24.dp))
+                            // Checklist/Todo: Converts to/from TODO_LIST_ITEM
+                            IconButton(
+                                onClick = {
+                                    val newType = if (focusedBlock.type == BlockType.TODO_LIST_ITEM) BlockType.PARAGRAPH else BlockType.TODO_LIST_ITEM
+                                    viewModel.changeBlockType(focusedBlock.id, newType)
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircleOutline,
+                                    contentDescription = "Checklist/Todo",
+                                    tint = if (focusedBlock.type == BlockType.TODO_LIST_ITEM) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
 
-                        // Formatting Actions
-                        val textRange = activeSelection ?: TextRange(0, focusedBlock.text.length)
-                        val start = textRange.start
-                        val end = textRange.end
+                            // Table/Grid: Converts to/from CODE_BLOCK
+                            IconButton(
+                                onClick = {
+                                    val newType = if (focusedBlock.type == BlockType.CODE_BLOCK) BlockType.PARAGRAPH else BlockType.CODE_BLOCK
+                                    viewModel.changeBlockType(focusedBlock.id, newType)
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.GridOn,
+                                    contentDescription = "Table/Code block",
+                                    tint = if (focusedBlock.type == BlockType.CODE_BLOCK) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
 
-                        IconButton(
-                            onClick = {
-                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BOLD, start, end)
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(Icons.Default.FormatBold, "Bold", modifier = Modifier.size(18.dp))
-                        }
+                            // Text Formatting ("T")
+                            IconButton(
+                                onClick = {
+                                    showFormattingBar = !showFormattingBar
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.TextFields,
+                                    contentDescription = "Format Text",
+                                    tint = if (showFormattingBar) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
 
-                        IconButton(
-                            onClick = {
-                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.ITALIC, start, end)
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(Icons.Default.FormatItalic, "Italic", modifier = Modifier.size(18.dp))
-                        }
+                            // Apps / More Blocks
+                            Box {
+                                IconButton(
+                                    onClick = {
+                                        showBlocksMenu = !showBlocksMenu
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Widgets,
+                                        contentDescription = "More Blocks",
+                                        tint = if (showBlocksMenu) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
 
-                        IconButton(
-                            onClick = {
-                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.UNDERLINE, start, end)
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(Icons.Default.FormatUnderlined, "Underline", modifier = Modifier.size(18.dp))
-                        }
-
-                        IconButton(
-                            onClick = {
-                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.STRIKETHROUGH, start, end)
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(Icons.Default.FormatStrikethrough, "Strikethrough", modifier = Modifier.size(18.dp))
-                        }
-
-                        IconButton(
-                            onClick = {
-                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.CODE, start, end)
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(Icons.Default.Code, "Code Span", modifier = Modifier.size(18.dp))
-                        }
-
-                        VerticalDivider(modifier = Modifier.height(24.dp))
-
-                        // Text Colors
-                        IconButton(
-                            onClick = {
-                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.TEXT_COLOR_RED, start, end)
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(Icons.Default.FormatColorText, "Red Text", modifier = Modifier.size(18.dp), tint = Color.Red)
-                        }
-
-                        IconButton(
-                            onClick = {
-                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.TEXT_COLOR_BLUE, start, end)
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(Icons.Default.FormatColorText, "Blue Text", modifier = Modifier.size(18.dp), tint = Color(0xFF1B63C2))
-                        }
-
-                        IconButton(
-                            onClick = {
-                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.TEXT_COLOR_GREEN, start, end)
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(Icons.Default.FormatColorText, "Green Text", modifier = Modifier.size(18.dp), tint = Color(0xFF2E7D32))
-                        }
-
-                        VerticalDivider(modifier = Modifier.height(24.dp))
-
-                        // Highlights/Backgrounds
-                        IconButton(
-                            onClick = {
-                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BACKGROUND_COLOR_YELLOW, start, end)
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(Icons.Default.Highlight, "Yellow Highlight", modifier = Modifier.size(18.dp), tint = Color(0xFFFFF9C4))
-                        }
-
-                        IconButton(
-                            onClick = {
-                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BACKGROUND_COLOR_LIGHT_GRAY, start, end)
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(Icons.Default.FormatColorFill, "Light Gray Bg", modifier = Modifier.size(18.dp), tint = Color(0xFFEEEEEE))
-                        }
-
-                        VerticalDivider(modifier = Modifier.height(24.dp))
-
-                        // Add Block & Delete Block Actions
-                        IconButton(
-                            onClick = {
-                                viewModel.insertBlockAfter(focusedBlock.id, BlockType.PARAGRAPH, "")
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(Icons.Default.AddCircleOutline, "Add Block Below", modifier = Modifier.size(18.dp))
-                        }
-
-                        IconButton(
-                            onClick = {
-                                viewModel.deleteBlock(focusedBlock.id)
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(Icons.Default.Delete, "Delete Block", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
+                                DropdownMenu(
+                                    expanded = showBlocksMenu,
+                                    onDismissRequest = { showBlocksMenu = false }
+                                ) {
+                                    val items = listOf(
+                                        Pair("Text", BlockType.PARAGRAPH),
+                                        Pair("Heading 1", BlockType.HEADER_1),
+                                        Pair("Heading 2", BlockType.HEADER_2),
+                                        Pair("Heading 3", BlockType.HEADER_3),
+                                        Pair("To-do list", BlockType.TODO_LIST_ITEM),
+                                        Pair("Bulleted list", BlockType.BULLETED_LIST_ITEM),
+                                        Pair("Numbered list", BlockType.NUMBERED_LIST_ITEM),
+                                        Pair("Quote", BlockType.QUOTE),
+                                        Pair("Callout", BlockType.CALLOUT),
+                                        Pair("Code block", BlockType.CODE_BLOCK)
+                                    )
+                                    items.forEach { (label, type) ->
+                                        DropdownMenuItem(
+                                            text = { Text(label, fontSize = 13.sp) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = getBlockIcon(type),
+                                                    contentDescription = label,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            },
+                                            onClick = {
+                                                viewModel.changeBlockType(focusedBlock.id, type)
+                                                showBlocksMenu = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -547,223 +702,147 @@ fun BlockEditorItem(
             .fillMaxWidth()
             .padding(vertical = 2.dp)
     ) {
+        // Block Layout Container with indentations for professional list layouts
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    when (block.type) {
+                        BlockType.BULLETED_LIST_ITEM -> Modifier.padding(start = 14.dp, end = 4.dp)
+                        BlockType.NUMBERED_LIST_ITEM -> Modifier.padding(start = 14.dp, end = 4.dp)
+                        BlockType.TODO_LIST_ITEM -> Modifier.padding(start = 8.dp, end = 4.dp)
+                        BlockType.CALLOUT -> Modifier
+                            .background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
+                            .padding(12.dp)
+                        BlockType.QUOTE -> Modifier
+                            .background(Color(0xFFF8FAFC))
+                            .padding(start = 12.dp, top = 6.dp, bottom = 6.dp)
+                        else -> Modifier
+                    }
+                ),
             verticalAlignment = Alignment.Top
         ) {
-            // Drag / Block Action Handles (Notion Style)
-            if (isFocused) {
-                Row(
-                    modifier = Modifier.padding(top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    var showTypeMenu by remember { mutableStateOf(false) }
-
-                    IconButton(
-                        onClick = { showTypeMenu = true },
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Change block type",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            modifier = Modifier.size(14.dp)
-                        )
-                    }
-
-                    IconButton(
-                        onClick = onDeleteBlock,
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete block",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            modifier = Modifier.size(14.dp)
-                        )
-                    }
-
-                    DropdownMenu(
-                        expanded = showTypeMenu,
-                        onDismissRequest = { showTypeMenu = false }
-                    ) {
-                        val items = listOf(
-                            Pair("Text", BlockType.PARAGRAPH),
-                            Pair("Heading 1", BlockType.HEADER_1),
-                            Pair("Heading 2", BlockType.HEADER_2),
-                            Pair("Heading 3", BlockType.HEADER_3),
-                            Pair("To-do list", BlockType.TODO_LIST_ITEM),
-                            Pair("Bulleted list", BlockType.BULLETED_LIST_ITEM),
-                            Pair("Numbered list", BlockType.NUMBERED_LIST_ITEM),
-                            Pair("Quote", BlockType.QUOTE),
-                            Pair("Callout", BlockType.CALLOUT),
-                            Pair("Code block", BlockType.CODE_BLOCK)
-                        )
-                        items.forEach { (label, type) ->
-                            DropdownMenuItem(
-                                text = { Text(label, fontSize = 13.sp) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = getBlockIcon(type),
-                                        contentDescription = label,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                },
-                                onClick = {
-                                    onChangeType(type)
-                                    showTypeMenu = false
-                                }
-                            )
-                        }
-                    }
+            // Decorators based on BlockType with polished alignment
+            when (block.type) {
+                BlockType.BULLETED_LIST_ITEM -> {
+                    Text(
+                        "•",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(end = 12.dp, top = 0.dp),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
-            } else {
-                Spacer(modifier = Modifier.width(48.dp))
+                BlockType.NUMBERED_LIST_ITEM -> {
+                    Text(
+                        "1.",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(end = 10.dp, top = 2.dp),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                BlockType.TODO_LIST_ITEM -> {
+                    val isChecked = block.properties["checked"] == "true"
+                    Checkbox(
+                        checked = isChecked,
+                        onCheckedChange = { onToggleTodo() },
+                        modifier = Modifier
+                            .size(24.dp)
+                            .padding(end = 8.dp)
+                    )
+                }
+                BlockType.CALLOUT -> {
+                    Text(
+                        "💡",
+                        fontSize = 18.sp,
+                        modifier = Modifier.padding(end = 10.dp)
+                    )
+                }
+                BlockType.QUOTE -> {
+                    // Styled as a vertical strip indicator on left
+                    Box(
+                        modifier = Modifier
+                            .width(3.dp)
+                            .fillMaxHeight()
+                            .background(Color.LightGray)
+                            .padding(end = 10.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                }
+                else -> {}
             }
 
-            Spacer(modifier = Modifier.width(4.dp))
+            val textStyle = remember(block.type) {
+                getBlockTextStyle(block.type)
+            }
 
-            // Block Layout Container
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .then(
-                        if (block.type == BlockType.CALLOUT) {
-                            Modifier
-                                .background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
-                                .padding(12.dp)
-                        } else if (block.type == BlockType.QUOTE) {
-                            Modifier
-                                .background(Color(0xFFF8FAFC))
-                                .padding(start = 12.dp, top = 6.dp, bottom = 6.dp)
-                        } else {
-                            Modifier
-                        }
-                    ),
-                verticalAlignment = Alignment.Top
-            ) {
-                // Decorators based on BlockType
-                when (block.type) {
-                    BlockType.BULLETED_LIST_ITEM -> {
-                        Text(
-                            "•",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(end = 8.dp, top = 2.dp),
-                            color = MaterialTheme.colorScheme.onSurface
+            // Main Core BasicTextField
+            BasicTextField(
+                value = textFieldValue,
+                onValueChange = { newValue ->
+                    val oldText = textFieldValue.text
+                    if (newValue.text.contains("\n")) {
+                        val index = newValue.text.indexOf('\n')
+                        val beforeText = newValue.text.substring(0, index)
+                        val afterText = newValue.text.substring(index + 1)
+
+                        // Immediately update state to prevent flicker
+                        textFieldValue = TextFieldValue(
+                            annotatedString = RichTextTransformer.toAnnotatedString(beforeText, block.inlineStyles),
+                            selection = TextRange(beforeText.length)
                         )
-                    }
-                    BlockType.NUMBERED_LIST_ITEM -> {
-                        Text(
-                            "1.",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(end = 8.dp, top = 2.dp),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    BlockType.TODO_LIST_ITEM -> {
-                        val isChecked = block.properties["checked"] == "true"
-                        Checkbox(
-                            checked = isChecked,
-                            onCheckedChange = { onToggleTodo() },
-                            modifier = Modifier
-                                .size(24.dp)
-                                .padding(end = 8.dp)
-                        )
-                    }
-                    BlockType.CALLOUT -> {
-                        Text(
-                            "💡",
-                            fontSize = 18.sp,
-                            modifier = Modifier.padding(end = 10.dp)
-                        )
-                    }
-                    BlockType.QUOTE -> {
-                        // Styled as a vertical strip indicator on left
-                        Box(
-                            modifier = Modifier
-                                .width(3.dp)
-                                .fillMaxHeight()
-                                .background(Color.LightGray)
-                                .padding(end = 10.dp)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                    }
-                    else -> {}
-                }
+                        onTextChanged(beforeText)
+                        onEnterPressed(afterText)
+                    } else {
+                        textFieldValue = newValue
 
-                val textStyle = remember(block.type) {
-                    getBlockTextStyle(block.type)
-                }
+                        // Callback to trigger text updates
+                        if (newValue.text != oldText) {
+                            onTextChanged(newValue.text)
 
-                // Main Core BasicTextField
-                BasicTextField(
-                    value = textFieldValue,
-                    onValueChange = { newValue ->
-                        val oldText = textFieldValue.text
-                        if (newValue.text.contains("\n")) {
-                            val index = newValue.text.indexOf('\n')
-                            val beforeText = newValue.text.substring(0, index)
-                            val afterText = newValue.text.substring(index + 1)
-
-                            // Immediately update state to prevent flicker
-                            textFieldValue = TextFieldValue(
-                                annotatedString = RichTextTransformer.toAnnotatedString(beforeText, block.inlineStyles),
-                                selection = TextRange(beforeText.length)
-                            )
-                            onTextChanged(beforeText)
-                            onEnterPressed(afterText)
-                        } else {
-                            textFieldValue = newValue
-
-                            // Callback to trigger text updates
-                            if (newValue.text != oldText) {
-                                onTextChanged(newValue.text)
-
-                                // Check if typed slash command "/"
-                                if (newValue.text.endsWith("/")) {
-                                    showSlashMenu = true
-                                } else {
-                                    showSlashMenu = false
-                                }
+                            // Check if typed slash command "/"
+                            if (newValue.text.endsWith("/")) {
+                                showSlashMenu = true
+                            } else {
+                                showSlashMenu = false
                             }
                         }
-                    },
-                    textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    modifier = Modifier
-                        .weight(1f)
-                        .focusRequester(focusRequester)
-                        .onFocusChanged { onFocusChanged(it.isFocused) }
-                        .onKeyEvent { keyEvent ->
-                            if (keyEvent.type == KeyEventType.KeyDown) {
-                                if (keyEvent.key == Key.Enter) {
-                                    onEnterPressed("")
-                                    true
-                                } else if (keyEvent.key == Key.Backspace && textFieldValue.text.isEmpty()) {
-                                    onBackspaceOnEmpty()
-                                    true
-                                } else {
-                                    false
-                                }
+                    }
+                },
+                textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                modifier = Modifier
+                    .weight(1f)
+                    .focusRequester(focusRequester)
+                    .onFocusChanged { onFocusChanged(it.isFocused) }
+                    .onKeyEvent { keyEvent ->
+                        if (keyEvent.type == KeyEventType.KeyDown) {
+                            if (keyEvent.key == Key.Enter) {
+                                onEnterPressed("")
+                                true
+                            } else if (keyEvent.key == Key.Backspace && textFieldValue.text.isEmpty()) {
+                                onBackspaceOnEmpty()
+                                true
                             } else {
                                 false
                             }
-                        },
-                    decorationBox = { innerTextField ->
-                        Box(modifier = Modifier.fillMaxWidth()) {
-                            if (textFieldValue.text.isEmpty()) {
-                                Text(
-                                    text = getPlaceholderText(block.type),
-                                    style = textStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-                                )
-                            }
-                            innerTextField()
+                        } else {
+                            false
                         }
+                    },
+                decorationBox = { innerTextField ->
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        if (textFieldValue.text.isEmpty()) {
+                            Text(
+                                text = getPlaceholderText(block.type),
+                                style = textStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                            )
+                        }
+                        innerTextField()
                     }
-                )
-            }
+                }
+            )
         }
 
         // Inline Slash commands popover menu when typed "/"

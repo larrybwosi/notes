@@ -112,6 +112,13 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
         }
     }
 
+    fun deselectActiveNote() {
+        _activeNote.value = null
+        _breadcrumbs.value = emptyList()
+        _subNotes.value = emptyList()
+        _focusedBlockId.value = null
+    }
+
     private suspend fun loadMetadata(noteId: String) {
         _breadcrumbs.value = repository.getBreadcrumbs(noteId)
         _subNotes.value = repository.getSubNotes(noteId)
