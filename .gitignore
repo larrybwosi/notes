@@ -23,3 +23,7 @@ Thumbs.db
 *.aar
 *.ap_
 *.aab
+
+# Signing keys
+*.jks
+*.keystore

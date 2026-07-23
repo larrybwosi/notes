@@ -54,8 +54,14 @@ jobs:
             NEW_TAG="v$major.$minor.$NEW_PATCH"
           fi
 
+          VERSION_STR=${NEW_TAG#v}
+          IFS='.' read -r major minor patch <<< "$VERSION_STR"
+          VERSION_CODE=$((major * 10000 + minor * 100 + patch))
+
           echo "New tag: $NEW_TAG"
           echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "version_name=$VERSION_STR" >> $GITHUB_OUTPUT
 
       - name: Create and Push Git Tag
         run: |
@@ -64,7 +70,7 @@ jobs:
           git push origin "$TAG_NAME"
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease -PapkVersionCode=${{ steps.versioning.outputs.version_code }} -PapkVersionName=${{ steps.versioning.outputs.version_name }}
 
       - name: Create GitHub Release
         env:
