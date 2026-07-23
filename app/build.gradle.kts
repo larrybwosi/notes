@@ -13,12 +13,26 @@ android {
     compileSdk = 34
 
     signingConfigs {
-        create("release") {
-            storeFile = file("signing-key.jks")
-            val decodedPass = String(Base64.getDecoder().decode("c2NyeW1lbm90ZXM="))
-            storePassword = System.getenv("SCRYME_RELEASE_STORE_PASSWORD") ?: decodedPass
-            keyAlias = System.getenv("SCRYME_RELEASE_KEY_ALIAS") ?: "scryme"
-            keyPassword = System.getenv("SCRYME_RELEASE_KEY_PASSWORD") ?: decodedPass
+        val keystoreFile = file("signing-key.jks")
+        val base64File = file("signing-key.base64")
+        if (!keystoreFile.exists() && base64File.exists()) {
+            try {
+                val base64Content = base64File.readText().trim()
+                val decodedBytes = Base64.getDecoder().decode(base64Content)
+                keystoreFile.writeBytes(decodedBytes)
+            } catch (e: Exception) {
+                // ignore
+            }
+        }
+
+        if (keystoreFile.exists()) {
+            create("release") {
+                storeFile = keystoreFile
+                val decodedPass = String(Base64.getDecoder().decode("c2NyeW1lbm90ZXM="))
+                storePassword = System.getenv("SCRYME_RELEASE_STORE_PASSWORD") ?: decodedPass
+                keyAlias = System.getenv("SCRYME_RELEASE_KEY_ALIAS") ?: "scryme"
+                keyPassword = System.getenv("SCRYME_RELEASE_KEY_PASSWORD") ?: decodedPass
+            }
         }
     }
 
@@ -45,7 +59,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig = signingConfigs.getByName("release")
+            val releaseConfig = signingConfigs.findByName("release")
+            if (releaseConfig != null) {
+                signingConfig = releaseConfig
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
     }
     compileOptions {
