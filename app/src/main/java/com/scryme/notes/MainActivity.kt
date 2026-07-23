@@ -16,6 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuOpen
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,11 +29,9 @@ import androidx.compose.ui.unit.sp
 import com.scryme.notes.domain.model.Note
 import com.scryme.notes.ui.DatabaseProvider
 import com.scryme.notes.ui.screens.NoteEditorScreen
-import com.scryme.notes.ui.screens.WorkspaceScreen
 import com.scryme.notes.ui.screens.SettingsScreen
+import com.scryme.notes.ui.screens.WorkspaceScreen
 import com.scryme.notes.ui.viewmodel.NoteViewModel
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import com.scryme.notes.ui.viewmodel.NoteViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -50,21 +50,22 @@ class MainActivity : ComponentActivity() {
             val accentColorVal by viewModel.accentColorVal.collectAsState()
 
             val accentColor = Color(accentColorVal)
-            val colorScheme = if (isDark) {
-                darkColorScheme(
-                    primary = accentColor,
-                    secondary = accentColor.copy(alpha = 0.8f),
-                    background = Color(0xFF121212),
-                    surface = Color(0xFF1E1E1E),
-                )
-            } else {
-                lightColorScheme(
-                    primary = accentColor,
-                    secondary = accentColor.copy(alpha = 0.8f),
-                    background = Color(0xFFF8FAFC),
-                    surface = Color.White,
-                )
-            }
+            val colorScheme =
+                if (isDark) {
+                    darkColorScheme(
+                        primary = accentColor,
+                        secondary = accentColor.copy(alpha = 0.8f),
+                        background = Color(0xFF121212),
+                        surface = Color(0xFF1E1E1E),
+                    )
+                } else {
+                    lightColorScheme(
+                        primary = accentColor,
+                        secondary = accentColor.copy(alpha = 0.8f),
+                        background = Color(0xFFF8FAFC),
+                        surface = Color.White,
+                    )
+                }
 
             MaterialTheme(colorScheme = colorScheme) {
                 Surface(
@@ -245,10 +246,11 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
         // Overlay Scrim for the sidebar drawer
         if (sidebarVisible) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.4f))
-                    .clickable { sidebarVisible = false }
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.4f))
+                        .clickable { sidebarVisible = false },
             )
         }
 
@@ -276,7 +278,7 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
                     onOpenSettings = {
                         showSettingsPage = true
                         sidebarVisible = false
-                    }
+                    },
                 )
             }
         }
@@ -284,7 +286,7 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
         // Full Screen Slide-in Settings Page Overlay
         AnimatedVisibility(
             visible = showSettingsPage,
-            enter = slideInHorizontally { it }, // slides in from the right
+            enter = slideInHorizontally { it },
             exit = slideOutHorizontally { it },
             modifier = Modifier.fillMaxSize(),
         ) {

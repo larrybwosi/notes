@@ -35,13 +35,14 @@ fun SettingsScreen(
 
     var showClearConfirmDialog by remember { mutableStateOf(false) }
 
-    val accentColors = listOf(
-        Pair("Blue", 0xFF1B63C2.toInt()),
-        Pair("Purple", 0xFF7C4DFF.toInt()),
-        Pair("Green", 0xFF2E7D32.toInt()),
-        Pair("Orange", 0xFFFF6D00.toInt()),
-        Pair("Red", 0xFFD11A2A.toInt()),
-    )
+    val accentColors =
+        listOf(
+            Pair("Blue", 0xFF1B63C2.toInt()),
+            Pair("Purple", 0xFF7C4DFF.toInt()),
+            Pair("Green", 0xFF2E7D32.toInt()),
+            Pair("Orange", 0xFFFF6D00.toInt()),
+            Pair("Red", 0xFFD11A2A.toInt()),
+        )
 
     val fontFamilies = listOf("Sans-Serif", "Serif", "Monospace")
 
@@ -54,30 +55,33 @@ fun SettingsScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                ),
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
             )
         },
         modifier = modifier.fillMaxSize(),
     ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             // Section 1: Appearance
             SettingsSection(title = "Appearance") {
                 // Theme Toggle row
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -123,15 +127,16 @@ fun SettingsScreen(
                         accentColors.forEach { (name, colorVal) ->
                             val isSelected = activeAccentColorVal == colorVal
                             Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(Color(colorVal), CircleShape)
-                                    .border(
-                                        width = if (isSelected) 3.dp else 0.dp,
-                                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
-                                        shape = CircleShape
-                                    )
-                                    .clickable { viewModel.setAccentColorVal(colorVal) },
+                                modifier =
+                                    Modifier
+                                        .size(36.dp)
+                                        .background(Color(colorVal), CircleShape)
+                                        .border(
+                                            width = if (isSelected) 3.dp else 0.dp,
+                                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                                            shape = CircleShape,
+                                        )
+                                        .clickable { viewModel.setAccentColorVal(colorVal) },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 if (isSelected) {
@@ -139,7 +144,7 @@ fun SettingsScreen(
                                         imageVector = Icons.Default.Check,
                                         contentDescription = "Selected",
                                         tint = Color.White,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(18.dp),
                                     )
                                 }
                             }
@@ -171,17 +176,20 @@ fun SettingsScreen(
                         fontFamilies.forEach { font ->
                             val isSelected = selectedFontPref == font
                             Card(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable { viewModel.setFontFamilyPreference(font) },
+                                modifier =
+                                    Modifier
+                                        .weight(1f)
+                                        .clickable { viewModel.setFontFamilyPreference(font) },
                                 shape = RoundedCornerShape(8.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (isSelected) {
-                                        MaterialTheme.colorScheme.primaryContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                    }
-                                ),
+                                colors =
+                                    CardDefaults.cardColors(
+                                        containerColor =
+                                            if (isSelected) {
+                                                MaterialTheme.colorScheme.primaryContainer
+                                            } else {
+                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                            },
+                                    ),
                             ) {
                                 Box(
                                     modifier = Modifier.padding(vertical = 8.dp),
@@ -191,11 +199,12 @@ fun SettingsScreen(
                                         text = font,
                                         fontSize = 13.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) {
-                                            MaterialTheme.colorScheme.onPrimaryContainer
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        },
+                                        color =
+                                            if (isSelected) {
+                                                MaterialTheme.colorScheme.onPrimaryContainer
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            },
                                         modifier = Modifier.fillMaxWidth(),
                                         textAlign = TextAlign.Center,
                                     )
@@ -209,9 +218,10 @@ fun SettingsScreen(
 
                 // Markdown switch
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -239,10 +249,11 @@ fun SettingsScreen(
             SettingsSection(title = "Data & Storage") {
                 // Export Notes Mock Card
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { /* mock action */ }
-                        .padding(vertical = 12.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { /* mock action */ }
+                            .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
@@ -271,10 +282,11 @@ fun SettingsScreen(
 
                 // Clear Notes row (dangerous)
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showClearConfirmDialog = true }
-                        .padding(vertical = 12.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { showClearConfirmDialog = true }
+                            .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
@@ -303,9 +315,10 @@ fun SettingsScreen(
             // Section 4: About
             SettingsSection(title = "About Scryme Notes") {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Text(
@@ -367,15 +380,17 @@ fun SettingsSection(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-        ),
+        border =
+            androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
         ) {
             Text(
                 text = title.uppercase(),

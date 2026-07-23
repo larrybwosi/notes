@@ -55,11 +55,12 @@ fun NoteEditorScreen(
 
     val markdownEnabled by viewModel.markdownEnabled.collectAsState()
     val fontFamilyPref by viewModel.fontFamilyPreference.collectAsState()
-    val selectedFontFamily = when (fontFamilyPref) {
-        "Serif" -> FontFamily.Serif
-        "Monospace" -> FontFamily.Monospace
-        else -> FontFamily.Default
-    }
+    val selectedFontFamily =
+        when (fontFamilyPref) {
+            "Serif" -> FontFamily.Serif
+            "Monospace" -> FontFamily.Monospace
+            else -> FontFamily.Default
+        }
 
     var activeSelection by remember { mutableStateOf<TextRange?>(null) }
 
@@ -278,19 +279,20 @@ fun NoteEditorScreen(
                         .weight(1f),
             ) {
                 itemsIndexed(note.blocks, key = { _, block -> block.id }) { index, block ->
-                    val sequenceNumber = if (block.type == BlockType.NUMBERED_LIST_ITEM) {
-                        var count = 0
-                        for (i in 0..index) {
-                            if (note.blocks[i].type == BlockType.NUMBERED_LIST_ITEM) {
-                                count++
-                            } else {
-                                count = 0
+                    val sequenceNumber =
+                        if (block.type == BlockType.NUMBERED_LIST_ITEM) {
+                            var count = 0
+                            for (i in 0..index) {
+                                if (note.blocks[i].type == BlockType.NUMBERED_LIST_ITEM) {
+                                    count++
+                                } else {
+                                    count = 0
+                                }
                             }
+                            count
+                        } else {
+                            1
                         }
-                        count
-                    } else {
-                        1
-                    }
 
                     BlockEditorItem(
                         block = block,
@@ -385,18 +387,19 @@ fun NoteEditorScreen(
                     ) {
                         // 1. Notion-Style Dropdown Block Selector
                         Box {
-                            val currentTypeName = when (focusedBlock.type) {
-                                BlockType.PARAGRAPH -> "Text"
-                                BlockType.HEADER_1 -> "Heading 1"
-                                BlockType.HEADER_2 -> "Heading 2"
-                                BlockType.HEADER_3 -> "Heading 3"
-                                BlockType.TODO_LIST_ITEM -> "To-do"
-                                BlockType.BULLETED_LIST_ITEM -> "Bullet List"
-                                BlockType.NUMBERED_LIST_ITEM -> "Numbered List"
-                                BlockType.QUOTE -> "Quote"
-                                BlockType.CALLOUT -> "Callout"
-                                BlockType.CODE_BLOCK -> "Code Block"
-                            }
+                            val currentTypeName =
+                                when (focusedBlock.type) {
+                                    BlockType.PARAGRAPH -> "Text"
+                                    BlockType.HEADER_1 -> "Heading 1"
+                                    BlockType.HEADER_2 -> "Heading 2"
+                                    BlockType.HEADER_3 -> "Heading 3"
+                                    BlockType.TODO_LIST_ITEM -> "To-do"
+                                    BlockType.BULLETED_LIST_ITEM -> "Bullet List"
+                                    BlockType.NUMBERED_LIST_ITEM -> "Numbered List"
+                                    BlockType.QUOTE -> "Quote"
+                                    BlockType.CALLOUT -> "Callout"
+                                    BlockType.CODE_BLOCK -> "Code Block"
+                                }
 
                             FilterChip(
                                 selected = true,
@@ -409,10 +412,11 @@ fun NoteEditorScreen(
                                         modifier = Modifier.size(16.dp),
                                     )
                                 },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                ),
+                                colors =
+                                    FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    ),
                             )
 
                             DropdownMenu(
@@ -861,10 +865,11 @@ fun BlockEditorItem(
                         if (matchedShortcut && targetType != null) {
                             val remainingText = text.substring(prefixLength)
                             val newAnnotated = RichTextTransformer.toAnnotatedString(remainingText, emptyList())
-                            textFieldValue = TextFieldValue(
-                                annotatedString = newAnnotated,
-                                selection = TextRange(remainingText.length)
-                            )
+                            textFieldValue =
+                                TextFieldValue(
+                                    annotatedString = newAnnotated,
+                                    selection = TextRange(remainingText.length),
+                                )
                             onTextChanged(remainingText)
                             onChangeType(targetType)
                         } else {
@@ -898,10 +903,11 @@ fun BlockEditorItem(
                                     val beforeText = text.substring(0, selStart)
                                     val afterText = text.substring(selStart)
 
-                                    textFieldValue = TextFieldValue(
-                                        annotatedString = RichTextTransformer.toAnnotatedString(beforeText, block.inlineStyles),
-                                        selection = TextRange(beforeText.length)
-                                    )
+                                    textFieldValue =
+                                        TextFieldValue(
+                                            annotatedString = RichTextTransformer.toAnnotatedString(beforeText, block.inlineStyles),
+                                            selection = TextRange(beforeText.length),
+                                        )
                                     onTextChanged(beforeText)
                                     onEnterPressed(afterText)
                                     true
