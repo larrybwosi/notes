@@ -28,7 +28,10 @@ import com.scryme.notes.domain.model.Note
 import com.scryme.notes.ui.DatabaseProvider
 import com.scryme.notes.ui.screens.NoteEditorScreen
 import com.scryme.notes.ui.screens.WorkspaceScreen
+import com.scryme.notes.ui.screens.SettingsScreen
 import com.scryme.notes.ui.viewmodel.NoteViewModel
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import com.scryme.notes.ui.viewmodel.NoteViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -43,7 +46,27 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            MaterialTheme {
+            val isDark by viewModel.isDarkMode.collectAsState()
+            val accentColorVal by viewModel.accentColorVal.collectAsState()
+
+            val accentColor = Color(accentColorVal)
+            val colorScheme = if (isDark) {
+                darkColorScheme(
+                    primary = accentColor,
+                    secondary = accentColor.copy(alpha = 0.8f),
+                    background = Color(0xFF121212),
+                    surface = Color(0xFF1E1E1E),
+                )
+            } else {
+                lightColorScheme(
+                    primary = accentColor,
+                    secondary = accentColor.copy(alpha = 0.8f),
+                    background = Color(0xFFF8FAFC),
+                    surface = Color.White,
+                )
+            }
+
+            MaterialTheme(colorScheme = colorScheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
@@ -61,42 +84,9 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
     var sidebarVisible by remember { mutableStateOf(false) }
     val activeNote by viewModel.activeNote.collectAsState()
     var showBottomSheet by remember { mutableStateOf(false) }
+    var showSettingsPage by remember { mutableStateOf(false) }
 
-    Row(modifier = Modifier.fillMaxSize()) {
-        // Collapsible Sidebar (Workspace Screen)
-        AnimatedVisibility(
-            visible = sidebarVisible,
-            enter = slideInHorizontally { -it },
-            exit = slideOutHorizontally { -it },
-        ) {
-            Surface(
-                modifier =
-                    Modifier
-                        .fillMaxHeight()
-                        .width(260.dp),
-                tonalElevation = 1.dp,
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-            ) {
-                WorkspaceScreen(
-                    viewModel = viewModel,
-                    onNoteSelected = {
-                        sidebarVisible = false
-                    },
-                )
-            }
-        }
-
-        // Vertical divider if sidebar is open
-        if (sidebarVisible) {
-            VerticalDivider(
-                modifier =
-                    Modifier
-                        .fillMaxHeight()
-                        .width(1.dp),
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-            )
-        }
-
+    Box(modifier = Modifier.fillMaxSize()) {
         // Main Editor Area with Toolbar at the top to toggle sidebar
         Column(
             modifier =
@@ -112,8 +102,19 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
                         .padding(horizontal = 8.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                // Menu button is always accessible on the left of the screen
+                IconButton(
+                    onClick = { sidebarVisible = !sidebarVisible },
+                ) {
+                    Icon(
+                        imageVector = if (sidebarVisible) Icons.AutoMirrored.Filled.MenuOpen else Icons.Default.Menu,
+                        contentDescription = "Toggle Sidebar",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
                 if (activeNote != null) {
-                    // Left back/navigation chevron to deselect and return to Welcome Screen
+                    // Left back/navigation chevron next to menu button to return to Welcome Screen
                     IconButton(
                         onClick = { viewModel.deselectActiveNote() },
                     ) {
@@ -121,17 +122,6 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
                             imageVector = Icons.Default.ChevronLeft,
                             contentDescription = "Back",
                             modifier = Modifier.size(28.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                } else {
-                    // Left menu toggle if on Welcome Screen
-                    IconButton(
-                        onClick = { sidebarVisible = !sidebarVisible },
-                    ) {
-                        Icon(
-                            imageVector = if (sidebarVisible) Icons.AutoMirrored.Filled.MenuOpen else Icons.Default.Menu,
-                            contentDescription = "Toggle Sidebar",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -249,6 +239,58 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
                 viewModel = viewModel,
                 onOpenSidebar = { sidebarVisible = true },
                 modifier = Modifier.weight(1f),
+            )
+        }
+
+        // Overlay Scrim for the sidebar drawer
+        if (sidebarVisible) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f))
+                    .clickable { sidebarVisible = false }
+            )
+        }
+
+        // Sidebar Navigation Overlay (Workspace Screen)
+        AnimatedVisibility(
+            visible = sidebarVisible,
+            enter = slideInHorizontally { -it },
+            exit = slideOutHorizontally { -it },
+            modifier = Modifier.align(Alignment.CenterStart),
+        ) {
+            Surface(
+                modifier =
+                    Modifier
+                        .fillMaxHeight()
+                        .width(280.dp),
+                tonalElevation = 8.dp,
+                shadowElevation = 8.dp,
+                color = MaterialTheme.colorScheme.surface,
+            ) {
+                WorkspaceScreen(
+                    viewModel = viewModel,
+                    onNoteSelected = {
+                        sidebarVisible = false
+                    },
+                    onOpenSettings = {
+                        showSettingsPage = true
+                        sidebarVisible = false
+                    }
+                )
+            }
+        }
+
+        // Full Screen Slide-in Settings Page Overlay
+        AnimatedVisibility(
+            visible = showSettingsPage,
+            enter = slideInHorizontally { it }, // slides in from the right
+            exit = slideOutHorizontally { it },
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            SettingsScreen(
+                viewModel = viewModel,
+                onClose = { showSettingsPage = false },
             )
         }
     }

@@ -53,6 +53,14 @@ fun NoteEditorScreen(
     val subNotes by viewModel.subNotes.collectAsState()
     val focusedBlockId by viewModel.focusedBlockId.collectAsState()
 
+    val markdownEnabled by viewModel.markdownEnabled.collectAsState()
+    val fontFamilyPref by viewModel.fontFamilyPreference.collectAsState()
+    val selectedFontFamily = when (fontFamilyPref) {
+        "Serif" -> FontFamily.Serif
+        "Monospace" -> FontFamily.Monospace
+        else -> FontFamily.Default
+    }
+
     var activeSelection by remember { mutableStateOf<TextRange?>(null) }
 
     if (activeNote == null) {
@@ -269,10 +277,27 @@ fun NoteEditorScreen(
                         .fillMaxWidth()
                         .weight(1f),
             ) {
-                itemsIndexed(note.blocks, key = { _, block -> block.id }) { _, block ->
+                itemsIndexed(note.blocks, key = { _, block -> block.id }) { index, block ->
+                    val sequenceNumber = if (block.type == BlockType.NUMBERED_LIST_ITEM) {
+                        var count = 0
+                        for (i in 0..index) {
+                            if (note.blocks[i].type == BlockType.NUMBERED_LIST_ITEM) {
+                                count++
+                            } else {
+                                count = 0
+                            }
+                        }
+                        count
+                    } else {
+                        1
+                    }
+
                     BlockEditorItem(
                         block = block,
                         focusedBlockId = focusedBlockId,
+                        sequenceNumber = sequenceNumber,
+                        markdownEnabled = markdownEnabled,
+                        selectedFontFamily = selectedFontFamily,
                         onFocusChanged = { focused ->
                             if (focused) viewModel.setFocusedBlock(block.id)
                         },
@@ -325,356 +350,305 @@ fun NoteEditorScreen(
             }
         }
 
-        // Horizontal Scrollable Obsidian-Style Toolbar and Keyboard Accessory Bar
+        // Horizontal Scrollable Combined Unified Toolbar and Keyboard Accessory Bar
         if (focusedBlockId != null) {
             val focusedBlock = note.blocks.find { it.id == focusedBlockId }
             if (focusedBlock != null) {
-                var showFormattingBar by remember { mutableStateOf(true) }
                 var showBlocksMenu by remember { mutableStateOf(false) }
 
-                Column(
+                Card(
                     modifier =
                         Modifier
                             .fillMaxWidth()
                             .align(Alignment.BottomCenter)
                             .navigationBarsPadding()
                             .imePadding()
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                            .padding(horizontal = 8.dp, vertical = 8.dp)
+                            .height(52.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    shape = RoundedCornerShape(26.dp),
+                    border =
+                        androidx.compose.foundation.BorderStroke(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                        ),
                 ) {
-                    // 1. Horizontal Scrollable Formatting Toolbar
-                    if (showFormattingBar) {
-                        Card(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 6.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                            shape = RoundedCornerShape(12.dp),
-                        ) {
-                            Row(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .horizontalScroll(rememberScrollState())
-                                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                // Quick Type Converter Chips
-                                val types =
-                                    listOf(
-                                        Triple("Text", BlockType.PARAGRAPH, Icons.Default.Title),
-                                        Triple("H1", BlockType.HEADER_1, Icons.Default.LooksOne),
-                                        Triple("H2", BlockType.HEADER_2, Icons.Default.LooksTwo),
-                                        Triple("H3", BlockType.HEADER_3, Icons.Default.Looks3),
-                                        Triple("Todo", BlockType.TODO_LIST_ITEM, Icons.Default.CheckBox),
-                                        Triple("Bullet", BlockType.BULLETED_LIST_ITEM, Icons.AutoMirrored.Filled.FormatListBulleted),
-                                        Triple("Number", BlockType.NUMBERED_LIST_ITEM, Icons.Default.FormatListNumbered),
-                                        Triple("Quote", BlockType.QUOTE, Icons.Default.FormatQuote),
-                                        Triple("Callout", BlockType.CALLOUT, Icons.Default.Lightbulb),
-                                        Triple("Code", BlockType.CODE_BLOCK, Icons.Default.Code),
-                                    )
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        // 1. Notion-Style Dropdown Block Selector
+                        Box {
+                            val currentTypeName = when (focusedBlock.type) {
+                                BlockType.PARAGRAPH -> "Text"
+                                BlockType.HEADER_1 -> "Heading 1"
+                                BlockType.HEADER_2 -> "Heading 2"
+                                BlockType.HEADER_3 -> "Heading 3"
+                                BlockType.TODO_LIST_ITEM -> "To-do"
+                                BlockType.BULLETED_LIST_ITEM -> "Bullet List"
+                                BlockType.NUMBERED_LIST_ITEM -> "Numbered List"
+                                BlockType.QUOTE -> "Quote"
+                                BlockType.CALLOUT -> "Callout"
+                                BlockType.CODE_BLOCK -> "Code Block"
+                            }
 
-                                types.forEach { (label, blockType, icon) ->
-                                    val isSelectedType = focusedBlock.type == blockType
-                                    FilterChip(
-                                        selected = isSelectedType,
-                                        onClick = { viewModel.changeBlockType(focusedBlock.id, blockType) },
-                                        label = { Text(label, fontSize = 12.sp) },
+                            FilterChip(
+                                selected = true,
+                                onClick = { showBlocksMenu = true },
+                                label = { Text(currentTypeName, fontSize = 12.sp) },
+                                trailingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = "Select Type",
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                ),
+                            )
+
+                            DropdownMenu(
+                                expanded = showBlocksMenu,
+                                onDismissRequest = { showBlocksMenu = false },
+                            ) {
+                                val items =
+                                    listOf(
+                                        Pair("Text", BlockType.PARAGRAPH),
+                                        Pair("Heading 1", BlockType.HEADER_1),
+                                        Pair("Heading 2", BlockType.HEADER_2),
+                                        Pair("Heading 3", BlockType.HEADER_3),
+                                        Pair("To-do list", BlockType.TODO_LIST_ITEM),
+                                        Pair("Bulleted list", BlockType.BULLETED_LIST_ITEM),
+                                        Pair("Numbered list", BlockType.NUMBERED_LIST_ITEM),
+                                        Pair("Quote", BlockType.QUOTE),
+                                        Pair("Callout", BlockType.CALLOUT),
+                                        Pair("Code block", BlockType.CODE_BLOCK),
+                                    )
+                                items.forEach { (label, type) ->
+                                    DropdownMenuItem(
+                                        text = { Text(label, fontSize = 13.sp) },
                                         leadingIcon = {
                                             Icon(
-                                                imageVector = icon,
+                                                imageVector = getBlockIcon(type),
                                                 contentDescription = label,
-                                                modifier = Modifier.size(14.dp),
+                                                modifier = Modifier.size(16.dp),
                                             )
                                         },
-                                        colors =
-                                            FilterChipDefaults.filterChipColors(
-                                                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                                selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
-                                            ),
-                                    )
-                                }
-
-                                VerticalDivider(modifier = Modifier.height(24.dp))
-
-                                // Formatting Actions
-                                val textRange = activeSelection ?: TextRange(0, focusedBlock.text.length)
-                                val start = textRange.start
-                                val end = textRange.end
-
-                                IconButton(
-                                    onClick = {
-                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BOLD, start, end)
-                                    },
-                                    modifier = Modifier.size(36.dp),
-                                ) {
-                                    Icon(Icons.Default.FormatBold, "Bold", modifier = Modifier.size(18.dp))
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.ITALIC, start, end)
-                                    },
-                                    modifier = Modifier.size(36.dp),
-                                ) {
-                                    Icon(Icons.Default.FormatItalic, "Italic", modifier = Modifier.size(18.dp))
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.UNDERLINE, start, end)
-                                    },
-                                    modifier = Modifier.size(36.dp),
-                                ) {
-                                    Icon(Icons.Default.FormatUnderlined, "Underline", modifier = Modifier.size(18.dp))
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.STRIKETHROUGH, start, end)
-                                    },
-                                    modifier = Modifier.size(36.dp),
-                                ) {
-                                    Icon(Icons.Default.FormatStrikethrough, "Strikethrough", modifier = Modifier.size(18.dp))
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.CODE, start, end)
-                                    },
-                                    modifier = Modifier.size(36.dp),
-                                ) {
-                                    Icon(Icons.Default.Code, "Code Span", modifier = Modifier.size(18.dp))
-                                }
-
-                                VerticalDivider(modifier = Modifier.height(24.dp))
-
-                                // Text Colors
-                                IconButton(
-                                    onClick = {
-                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.TEXT_COLOR_RED, start, end)
-                                    },
-                                    modifier = Modifier.size(36.dp),
-                                ) {
-                                    Icon(Icons.Default.FormatColorText, "Red Text", modifier = Modifier.size(18.dp), tint = Color.Red)
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.TEXT_COLOR_BLUE, start, end)
-                                    },
-                                    modifier = Modifier.size(36.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Default.FormatColorText,
-                                        "Blue Text",
-                                        modifier = Modifier.size(18.dp),
-                                        tint = Color(0xFF1B63C2),
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.TEXT_COLOR_GREEN, start, end)
-                                    },
-                                    modifier = Modifier.size(36.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Default.FormatColorText,
-                                        "Green Text",
-                                        modifier = Modifier.size(18.dp),
-                                        tint = Color(0xFF2E7D32),
-                                    )
-                                }
-
-                                VerticalDivider(modifier = Modifier.height(24.dp))
-
-                                // Highlights/Backgrounds
-                                IconButton(
-                                    onClick = {
-                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BACKGROUND_COLOR_YELLOW, start, end)
-                                    },
-                                    modifier = Modifier.size(36.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Default.Highlight,
-                                        "Yellow Highlight",
-                                        modifier = Modifier.size(18.dp),
-                                        tint = Color(0xFFFFF9C4),
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BACKGROUND_COLOR_LIGHT_GRAY, start, end)
-                                    },
-                                    modifier = Modifier.size(36.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Default.FormatColorFill,
-                                        "Light Gray Bg",
-                                        modifier = Modifier.size(18.dp),
-                                        tint = Color(0xFFEEEEEE),
-                                    )
-                                }
-
-                                VerticalDivider(modifier = Modifier.height(24.dp))
-
-                                // Add Block & Delete Block Actions
-                                IconButton(
-                                    onClick = {
-                                        viewModel.insertBlockAfter(focusedBlock.id, BlockType.PARAGRAPH, "")
-                                    },
-                                    modifier = Modifier.size(36.dp),
-                                ) {
-                                    Icon(Icons.Default.AddCircleOutline, "Add Block Below", modifier = Modifier.size(18.dp))
-                                }
-
-                                IconButton(
-                                    onClick = {
-                                        viewModel.deleteBlock(focusedBlock.id)
-                                    },
-                                    modifier = Modifier.size(36.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        "Delete Block",
-                                        modifier = Modifier.size(18.dp),
-                                        tint = MaterialTheme.colorScheme.error,
+                                        onClick = {
+                                            viewModel.changeBlockType(focusedBlock.id, type)
+                                            showBlocksMenu = false
+                                        },
                                     )
                                 }
                             }
                         }
-                    }
 
-                    // 2. Mockup 5-Tool Keyboard Accessory Bar
-                    Card(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .height(50.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(25.dp),
-                        border =
-                            androidx.compose.foundation.BorderStroke(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                            ),
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceEvenly,
+                        VerticalDivider(modifier = Modifier.height(24.dp))
+
+                        // 2. High-fidelity conversion shortcuts from 5-Tool keyboard bar
+                        // Pen/Scribble: Converts to/from CALLOUT
+                        IconButton(
+                            onClick = {
+                                val newType = if (focusedBlock.type == BlockType.CALLOUT) BlockType.PARAGRAPH else BlockType.CALLOUT
+                                viewModel.changeBlockType(focusedBlock.id, newType)
+                            },
+                            modifier = Modifier.size(36.dp),
                         ) {
-                            // Pen/Scribble: Converts to/from CALLOUT
-                            IconButton(
-                                onClick = {
-                                    val newType = if (focusedBlock.type == BlockType.CALLOUT) BlockType.PARAGRAPH else BlockType.CALLOUT
-                                    viewModel.changeBlockType(focusedBlock.id, newType)
-                                },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Brush,
-                                    contentDescription = "Scribble/Callout",
-                                    tint = if (focusedBlock.type == BlockType.CALLOUT) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Default.Brush,
+                                contentDescription = "Scribble/Callout",
+                                tint = if (focusedBlock.type == BlockType.CALLOUT) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
 
-                            // Checklist/Todo: Converts to/from TODO_LIST_ITEM
-                            IconButton(
-                                onClick = {
-                                    val newType = if (focusedBlock.type == BlockType.TODO_LIST_ITEM) BlockType.PARAGRAPH else BlockType.TODO_LIST_ITEM
-                                    viewModel.changeBlockType(focusedBlock.id, newType)
-                                },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CheckCircleOutline,
-                                    contentDescription = "Checklist/Todo",
-                                    tint = if (focusedBlock.type == BlockType.TODO_LIST_ITEM) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
+                        // Checklist/Todo: Converts to/from TODO_LIST_ITEM
+                        IconButton(
+                            onClick = {
+                                val newType = if (focusedBlock.type == BlockType.TODO_LIST_ITEM) BlockType.PARAGRAPH else BlockType.TODO_LIST_ITEM
+                                viewModel.changeBlockType(focusedBlock.id, newType)
+                            },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircleOutline,
+                                contentDescription = "Checklist/Todo",
+                                tint = if (focusedBlock.type == BlockType.TODO_LIST_ITEM) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
 
-                            // Table/Grid: Converts to/from CODE_BLOCK
-                            IconButton(
-                                onClick = {
-                                    val newType = if (focusedBlock.type == BlockType.CODE_BLOCK) BlockType.PARAGRAPH else BlockType.CODE_BLOCK
-                                    viewModel.changeBlockType(focusedBlock.id, newType)
-                                },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.GridOn,
-                                    contentDescription = "Table/Code block",
-                                    tint = if (focusedBlock.type == BlockType.CODE_BLOCK) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
+                        // Table/Grid: Converts to/from CODE_BLOCK
+                        IconButton(
+                            onClick = {
+                                val newType = if (focusedBlock.type == BlockType.CODE_BLOCK) BlockType.PARAGRAPH else BlockType.CODE_BLOCK
+                                viewModel.changeBlockType(focusedBlock.id, newType)
+                            },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.GridOn,
+                                contentDescription = "Table/Code block",
+                                tint = if (focusedBlock.type == BlockType.CODE_BLOCK) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
 
-                            // Text Formatting ("T")
-                            IconButton(
-                                onClick = {
-                                    showFormattingBar = !showFormattingBar
-                                },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.TextFields,
-                                    contentDescription = "Format Text",
-                                    tint = if (showFormattingBar) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
+                        VerticalDivider(modifier = Modifier.height(24.dp))
 
-                            // Apps / More Blocks
-                            Box {
-                                IconButton(
-                                    onClick = {
-                                        showBlocksMenu = !showBlocksMenu
-                                    },
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Widgets,
-                                        contentDescription = "More Blocks",
-                                        tint = if (showBlocksMenu) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
+                        // Formatting Actions
+                        val textRange = activeSelection ?: TextRange(0, focusedBlock.text.length)
+                        val start = textRange.start
+                        val end = textRange.end
 
-                                DropdownMenu(
-                                    expanded = showBlocksMenu,
-                                    onDismissRequest = { showBlocksMenu = false },
-                                ) {
-                                    val items =
-                                        listOf(
-                                            Pair("Text", BlockType.PARAGRAPH),
-                                            Pair("Heading 1", BlockType.HEADER_1),
-                                            Pair("Heading 2", BlockType.HEADER_2),
-                                            Pair("Heading 3", BlockType.HEADER_3),
-                                            Pair("To-do list", BlockType.TODO_LIST_ITEM),
-                                            Pair("Bulleted list", BlockType.BULLETED_LIST_ITEM),
-                                            Pair("Numbered list", BlockType.NUMBERED_LIST_ITEM),
-                                            Pair("Quote", BlockType.QUOTE),
-                                            Pair("Callout", BlockType.CALLOUT),
-                                            Pair("Code block", BlockType.CODE_BLOCK),
-                                        )
-                                    items.forEach { (label, type) ->
-                                        DropdownMenuItem(
-                                            text = { Text(label, fontSize = 13.sp) },
-                                            leadingIcon = {
-                                                Icon(
-                                                    imageVector = getBlockIcon(type),
-                                                    contentDescription = label,
-                                                    modifier = Modifier.size(16.dp),
-                                                )
-                                            },
-                                            onClick = {
-                                                viewModel.changeBlockType(focusedBlock.id, type)
-                                                showBlocksMenu = false
-                                            },
-                                        )
-                                    }
-                                }
-                            }
+                        IconButton(
+                            onClick = {
+                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BOLD, start, end)
+                            },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(Icons.Default.FormatBold, "Bold", modifier = Modifier.size(18.dp))
+                        }
+
+                        IconButton(
+                            onClick = {
+                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.ITALIC, start, end)
+                            },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(Icons.Default.FormatItalic, "Italic", modifier = Modifier.size(18.dp))
+                        }
+
+                        IconButton(
+                            onClick = {
+                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.UNDERLINE, start, end)
+                            },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(Icons.Default.FormatUnderlined, "Underline", modifier = Modifier.size(18.dp))
+                        }
+
+                        IconButton(
+                            onClick = {
+                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.STRIKETHROUGH, start, end)
+                            },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(Icons.Default.FormatStrikethrough, "Strikethrough", modifier = Modifier.size(18.dp))
+                        }
+
+                        IconButton(
+                            onClick = {
+                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.CODE, start, end)
+                            },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(Icons.Default.Code, "Code Span", modifier = Modifier.size(18.dp))
+                        }
+
+                        VerticalDivider(modifier = Modifier.height(24.dp))
+
+                        // Text Colors
+                        IconButton(
+                            onClick = {
+                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.TEXT_COLOR_RED, start, end)
+                            },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(Icons.Default.FormatColorText, "Red Text", modifier = Modifier.size(18.dp), tint = Color.Red)
+                        }
+
+                        IconButton(
+                            onClick = {
+                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.TEXT_COLOR_BLUE, start, end)
+                            },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.FormatColorText,
+                                "Blue Text",
+                                modifier = Modifier.size(18.dp),
+                                tint = Color(0xFF1B63C2),
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.TEXT_COLOR_GREEN, start, end)
+                            },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.FormatColorText,
+                                "Green Text",
+                                modifier = Modifier.size(18.dp),
+                                tint = Color(0xFF2E7D32),
+                            )
+                        }
+
+                        VerticalDivider(modifier = Modifier.height(24.dp))
+
+                        // Highlights/Backgrounds
+                        IconButton(
+                            onClick = {
+                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BACKGROUND_COLOR_YELLOW, start, end)
+                            },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.Highlight,
+                                "Yellow Highlight",
+                                modifier = Modifier.size(18.dp),
+                                tint = Color(0xFFFFF9C4),
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BACKGROUND_COLOR_LIGHT_GRAY, start, end)
+                            },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.FormatColorFill,
+                                "Light Gray Bg",
+                                modifier = Modifier.size(18.dp),
+                                tint = Color(0xFFEEEEEE),
+                            )
+                        }
+
+                        VerticalDivider(modifier = Modifier.height(24.dp))
+
+                        // Add Block & Delete Block Actions
+                        IconButton(
+                            onClick = {
+                                viewModel.insertBlockAfter(focusedBlock.id, BlockType.PARAGRAPH, "")
+                            },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(Icons.Default.AddCircleOutline, "Add Block Below", modifier = Modifier.size(18.dp))
+                        }
+
+                        IconButton(
+                            onClick = {
+                                viewModel.deleteBlock(focusedBlock.id)
+                            },
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                "Delete Block",
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.error,
+                            )
                         }
                     }
                 }
@@ -696,6 +670,9 @@ fun BlockEditorItem(
     onApplyStyle: (StyleType, Int, Int) -> Unit,
     onDeleteBlock: () -> Unit,
     onSelectionChanged: (TextRange) -> Unit,
+    sequenceNumber: Int = 1,
+    markdownEnabled: Boolean = true,
+    selectedFontFamily: FontFamily = FontFamily.Default,
 ) {
     val isFocused = focusedBlockId == block.id
     val focusRequester = remember { FocusRequester() }
@@ -781,7 +758,7 @@ fun BlockEditorItem(
                 }
                 BlockType.NUMBERED_LIST_ITEM -> {
                     Text(
-                        "1.",
+                        "$sequenceNumber.",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(end = 10.dp, top = 2.dp),
@@ -822,8 +799,8 @@ fun BlockEditorItem(
             }
 
             val textStyle =
-                remember(block.type) {
-                    getBlockTextStyle(block.type)
+                remember(block.type, selectedFontFamily) {
+                    getBlockTextStyle(block.type).copy(fontFamily = if (block.type == BlockType.CODE_BLOCK) FontFamily.Monospace else selectedFontFamily)
                 }
 
             // Main Core BasicTextField
@@ -845,17 +822,63 @@ fun BlockEditorItem(
                         onTextChanged(beforeText)
                         onEnterPressed(afterText)
                     } else {
-                        textFieldValue = newValue
+                        // Check for markdown shortcuts at the start of the block
+                        val text = newValue.text
+                        var matchedShortcut = false
+                        var targetType: BlockType? = null
+                        var prefixLength = 0
 
-                        // Callback to trigger text updates
-                        if (newValue.text != oldText) {
-                            onTextChanged(newValue.text)
+                        if (markdownEnabled && (text.startsWith("- ") || text.startsWith("* ") || text.startsWith("• "))) {
+                            targetType = BlockType.BULLETED_LIST_ITEM
+                            prefixLength = 2
+                            matchedShortcut = true
+                        } else if (markdownEnabled && (text.startsWith("1. ") || text.startsWith("1) "))) {
+                            targetType = BlockType.NUMBERED_LIST_ITEM
+                            prefixLength = 3
+                            matchedShortcut = true
+                        } else if (markdownEnabled && (text.startsWith("[] ") || text.startsWith("[ ] "))) {
+                            targetType = BlockType.TODO_LIST_ITEM
+                            prefixLength = if (text.startsWith("[] ")) 3 else 4
+                            matchedShortcut = true
+                        } else if (markdownEnabled && text.startsWith("# ")) {
+                            targetType = BlockType.HEADER_1
+                            prefixLength = 2
+                            matchedShortcut = true
+                        } else if (markdownEnabled && text.startsWith("## ")) {
+                            targetType = BlockType.HEADER_2
+                            prefixLength = 3
+                            matchedShortcut = true
+                        } else if (markdownEnabled && text.startsWith("### ")) {
+                            targetType = BlockType.HEADER_3
+                            prefixLength = 4
+                            matchedShortcut = true
+                        } else if (markdownEnabled && text.startsWith("> ")) {
+                            targetType = BlockType.QUOTE
+                            prefixLength = 2
+                            matchedShortcut = true
+                        }
 
-                            // Check if typed slash command "/"
-                            if (newValue.text.endsWith("/")) {
-                                showSlashMenu = true
-                            } else {
-                                showSlashMenu = false
+                        if (matchedShortcut && targetType != null) {
+                            val remainingText = text.substring(prefixLength)
+                            val newAnnotated = RichTextTransformer.toAnnotatedString(remainingText, emptyList())
+                            textFieldValue = TextFieldValue(
+                                annotatedString = newAnnotated,
+                                selection = TextRange(remainingText.length)
+                            )
+                            onTextChanged(remainingText)
+                            onChangeType(targetType)
+                        } else {
+                            textFieldValue = newValue
+                            // Callback to trigger text updates
+                            if (newValue.text != oldText) {
+                                onTextChanged(newValue.text)
+
+                                // Check if typed slash command "/"
+                                if (newValue.text.endsWith("/")) {
+                                    showSlashMenu = true
+                                } else {
+                                    showSlashMenu = false
+                                }
                             }
                         }
                     }
@@ -870,7 +893,17 @@ fun BlockEditorItem(
                         .onKeyEvent { keyEvent ->
                             if (keyEvent.type == KeyEventType.KeyDown) {
                                 if (keyEvent.key == Key.Enter) {
-                                    onEnterPressed("")
+                                    val selStart = textFieldValue.selection.start
+                                    val text = textFieldValue.text
+                                    val beforeText = text.substring(0, selStart)
+                                    val afterText = text.substring(selStart)
+
+                                    textFieldValue = TextFieldValue(
+                                        annotatedString = RichTextTransformer.toAnnotatedString(beforeText, block.inlineStyles),
+                                        selection = TextRange(beforeText.length)
+                                    )
+                                    onTextChanged(beforeText)
+                                    onEnterPressed(afterText)
                                     true
                                 } else if (keyEvent.key == Key.Backspace && textFieldValue.text.isEmpty()) {
                                     onBackspaceOnEmpty()
