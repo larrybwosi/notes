@@ -17,16 +17,17 @@ object DatabaseProvider {
     }
 
     private fun buildRepository(context: Context): NoteRepository {
-        val db = database ?: synchronized(this) {
-            database ?: Room.databaseBuilder(
-                context.applicationContext,
-                NoteDatabase::class.java,
-                "notes_database"
-            )
-            .fallbackToDestructiveMigration()
-            .build()
-            .also { database = it }
-        }
+        val db =
+            database ?: synchronized(this) {
+                database ?: Room.databaseBuilder(
+                    context.applicationContext,
+                    NoteDatabase::class.java,
+                    "notes_database",
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
+                    .also { database = it }
+            }
         return NoteRepositoryImpl(db.noteDao)
     }
 }

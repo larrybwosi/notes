@@ -93,16 +93,18 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
             val note = repository.getNote(noteId)
             if (note != null) {
                 // If note has no blocks, create a default paragraph block so user can click to type immediately
-                val initializedNote = if (note.blocks.isEmpty()) {
-                    val defaultBlock = Block(
-                        id = UUID.randomUUID().toString(),
-                        type = BlockType.PARAGRAPH,
-                        text = ""
-                    )
-                    note.copy(blocks = listOf(defaultBlock))
-                } else {
-                    note
-                }
+                val initializedNote =
+                    if (note.blocks.isEmpty()) {
+                        val defaultBlock =
+                            Block(
+                                id = UUID.randomUUID().toString(),
+                                type = BlockType.PARAGRAPH,
+                                text = "",
+                            )
+                        note.copy(blocks = listOf(defaultBlock))
+                    } else {
+                        note
+                    }
 
                 _activeNote.value = initializedNote
                 _focusedBlockId.value = initializedNote.blocks.firstOrNull()?.id
@@ -110,6 +112,13 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
                 repository.saveNote(initializedNote)
             }
         }
+    }
+
+    fun deselectActiveNote() {
+        _activeNote.value = null
+        _breadcrumbs.value = emptyList()
+        _subNotes.value = emptyList()
+        _focusedBlockId.value = null
     }
 
     private suspend fun loadMetadata(noteId: String) {
@@ -120,47 +129,57 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
     fun createRootNote(title: String = "Untitled Note") {
         viewModelScope.launch {
             val newId = UUID.randomUUID().toString()
-            val defaultBlock = Block(
-                id = UUID.randomUUID().toString(),
-                type = BlockType.PARAGRAPH,
-                text = ""
-            )
-            val newNote = Note(
-                id = newId,
-                title = title,
-                blocks = listOf(defaultBlock),
-                parentId = null,
-                createdAt = System.currentTimeMillis(),
-                updatedAt = System.currentTimeMillis()
-            )
+            val defaultBlock =
+                Block(
+                    id = UUID.randomUUID().toString(),
+                    type = BlockType.PARAGRAPH,
+                    text = "",
+                )
+            val newNote =
+                Note(
+                    id = newId,
+                    title = title,
+                    blocks = listOf(defaultBlock),
+                    parentId = null,
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis(),
+                )
             repository.saveNote(newNote)
             loadAllNotes()
             selectNote(newId)
         }
     }
 
-    fun createChildNote(parentId: String, title: String = "Untitled Child Note") {
+    fun createChildNote(
+        parentId: String,
+        title: String = "Untitled Child Note",
+    ) {
         viewModelScope.launch {
             val newId = UUID.randomUUID().toString()
-            val defaultBlock = Block(
-                id = UUID.randomUUID().toString(),
-                type = BlockType.PARAGRAPH,
-                text = ""
-            )
+            val defaultBlock =
+                Block(
+                    id = UUID.randomUUID().toString(),
+                    type = BlockType.PARAGRAPH,
+                    text = "",
+                )
             val parentNote = repository.getNote(parentId)
-            val nextOrderIndex = if (parentNote != null) {
-                repository.getSubNotes(parentId).size
-            } else 0
+            val nextOrderIndex =
+                if (parentNote != null) {
+                    repository.getSubNotes(parentId).size
+                } else {
+                    0
+                }
 
-            val childNote = Note(
-                id = newId,
-                title = title,
-                blocks = listOf(defaultBlock),
-                parentId = parentId,
-                createdAt = System.currentTimeMillis(),
-                updatedAt = System.currentTimeMillis(),
-                order = nextOrderIndex
-            )
+            val childNote =
+                Note(
+                    id = newId,
+                    title = title,
+                    blocks = listOf(defaultBlock),
+                    parentId = parentId,
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis(),
+                    order = nextOrderIndex,
+                )
             repository.saveNote(childNote)
 
             // Expand the parent so user sees the newly added child node
@@ -188,10 +207,11 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
 
     fun updateActiveNoteTitle(newTitle: String) {
         val current = _activeNote.value ?: return
-        val updated = current.copy(
-            title = newTitle,
-            updatedAt = System.currentTimeMillis()
-        )
+        val updated =
+            current.copy(
+                title = newTitle,
+                updatedAt = System.currentTimeMillis(),
+            )
         _activeNote.value = updated
         saveNoteDynamically(updated)
     }
@@ -202,109 +222,133 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
         _focusedBlockId.value = blockId
     }
 
-    fun updateBlockText(blockId: String, newText: String) {
+    fun updateBlockText(
+        blockId: String,
+        newText: String,
+    ) {
         val current = _activeNote.value ?: return
-        val updatedBlocks = current.blocks.map { block ->
-            if (block.id == blockId) {
-                // Adjust inline styles to fit length if text is shortened
-                val trimmedStyles = block.inlineStyles.mapNotNull { span ->
-                    val start = span.start.coerceAtMost(newText.length)
-                    val end = span.end.coerceAtMost(newText.length)
-                    if (start < end) {
-                        span.copy(start = start, end = end)
-                    } else {
-                        null
-                    }
+        val updatedBlocks =
+            current.blocks.map { block ->
+                if (block.id == blockId) {
+                    // Adjust inline styles to fit length if text is shortened
+                    val trimmedStyles =
+                        block.inlineStyles.mapNotNull { span ->
+                            val start = span.start.coerceAtMost(newText.length)
+                            val end = span.end.coerceAtMost(newText.length)
+                            if (start < end) {
+                                span.copy(start = start, end = end)
+                            } else {
+                                null
+                            }
+                        }
+                    block.copy(text = newText, inlineStyles = trimmedStyles)
+                } else {
+                    block
                 }
-                block.copy(text = newText, inlineStyles = trimmedStyles)
-            } else {
-                block
             }
-        }
-        val updated = current.copy(
-            blocks = updatedBlocks,
-            updatedAt = System.currentTimeMillis()
-        )
+        val updated =
+            current.copy(
+                blocks = updatedBlocks,
+                updatedAt = System.currentTimeMillis(),
+            )
         _activeNote.value = updated
         saveNoteDynamically(updated)
     }
 
-    fun insertBlockAfter(currentBlockId: String, type: BlockType = BlockType.PARAGRAPH, initialText: String = "") {
+    fun insertBlockAfter(
+        currentBlockId: String,
+        type: BlockType = BlockType.PARAGRAPH,
+        initialText: String = "",
+    ) {
         val current = _activeNote.value ?: return
         val index = current.blocks.indexOfFirst { it.id == currentBlockId }
         if (index == -1) return
 
-        val newBlock = Block(
-            id = UUID.randomUUID().toString(),
-            type = type,
-            text = initialText
-        )
+        val newBlock =
+            Block(
+                id = UUID.randomUUID().toString(),
+                type = type,
+                text = initialText,
+            )
 
         val updatedList = current.blocks.toMutableList()
         updatedList.add(index + 1, newBlock)
 
-        val updated = current.copy(
-            blocks = updatedList,
-            updatedAt = System.currentTimeMillis()
-        )
+        val updated =
+            current.copy(
+                blocks = updatedList,
+                updatedAt = System.currentTimeMillis(),
+            )
         _activeNote.value = updated
         _focusedBlockId.value = newBlock.id
         saveNoteDynamically(updated)
     }
 
-    fun changeBlockType(blockId: String, newType: BlockType) {
+    fun changeBlockType(
+        blockId: String,
+        newType: BlockType,
+    ) {
         val current = _activeNote.value ?: return
-        val updatedBlocks = current.blocks.map { block ->
-            if (block.id == blockId) {
-                // Preserve content and styles but modify the layout type
-                block.copy(type = newType)
-            } else {
-                block
+        val updatedBlocks =
+            current.blocks.map { block ->
+                if (block.id == blockId) {
+                    // Preserve content and styles but modify the layout type
+                    block.copy(type = newType)
+                } else {
+                    block
+                }
             }
-        }
-        val updated = current.copy(
-            blocks = updatedBlocks,
-            updatedAt = System.currentTimeMillis()
-        )
+        val updated =
+            current.copy(
+                blocks = updatedBlocks,
+                updatedAt = System.currentTimeMillis(),
+            )
         _activeNote.value = updated
         saveNoteDynamically(updated)
     }
 
     fun toggleTodoBlockChecked(blockId: String) {
         val current = _activeNote.value ?: return
-        val updatedBlocks = current.blocks.map { block ->
-            if (block.id == blockId && block.type == BlockType.TODO_LIST_ITEM) {
-                val isChecked = block.properties["checked"] == "true"
-                val newProps = block.properties.toMutableMap()
-                newProps["checked"] = (!isChecked).toString()
-                block.copy(properties = newProps)
-            } else {
-                block
+        val updatedBlocks =
+            current.blocks.map { block ->
+                if (block.id == blockId && block.type == BlockType.TODO_LIST_ITEM) {
+                    val isChecked = block.properties["checked"] == "true"
+                    val newProps = block.properties.toMutableMap()
+                    newProps["checked"] = (!isChecked).toString()
+                    block.copy(properties = newProps)
+                } else {
+                    block
+                }
             }
-        }
-        val updated = current.copy(
-            blocks = updatedBlocks,
-            updatedAt = System.currentTimeMillis()
-        )
+        val updated =
+            current.copy(
+                blocks = updatedBlocks,
+                updatedAt = System.currentTimeMillis(),
+            )
         _activeNote.value = updated
         saveNoteDynamically(updated)
     }
 
-    fun updateCodeBlockLanguage(blockId: String, language: String) {
+    fun updateCodeBlockLanguage(
+        blockId: String,
+        language: String,
+    ) {
         val current = _activeNote.value ?: return
-        val updatedBlocks = current.blocks.map { block ->
-            if (block.id == blockId && block.type == BlockType.CODE_BLOCK) {
-                val newProps = block.properties.toMutableMap()
-                newProps["language"] = language
-                block.copy(properties = newProps)
-            } else {
-                block
+        val updatedBlocks =
+            current.blocks.map { block ->
+                if (block.id == blockId && block.type == BlockType.CODE_BLOCK) {
+                    val newProps = block.properties.toMutableMap()
+                    newProps["language"] = language
+                    block.copy(properties = newProps)
+                } else {
+                    block
+                }
             }
-        }
-        val updated = current.copy(
-            blocks = updatedBlocks,
-            updatedAt = System.currentTimeMillis()
-        )
+        val updated =
+            current.copy(
+                blocks = updatedBlocks,
+                updatedAt = System.currentTimeMillis(),
+            )
         _activeNote.value = updated
         saveNoteDynamically(updated)
     }
@@ -314,16 +358,18 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
 
         // If it's the last block, don't delete but reset its text to maintain at least one editable input
         if (current.blocks.size <= 1) {
-            val resetBlock = current.blocks.first().copy(
-                type = BlockType.PARAGRAPH,
-                text = "",
-                inlineStyles = emptyList(),
-                properties = emptyMap()
-            )
-            val updated = current.copy(
-                blocks = listOf(resetBlock),
-                updatedAt = System.currentTimeMillis()
-            )
+            val resetBlock =
+                current.blocks.first().copy(
+                    type = BlockType.PARAGRAPH,
+                    text = "",
+                    inlineStyles = emptyList(),
+                    properties = emptyMap(),
+                )
+            val updated =
+                current.copy(
+                    blocks = listOf(resetBlock),
+                    updatedAt = System.currentTimeMillis(),
+                )
             _activeNote.value = updated
             saveNoteDynamically(updated)
             return
@@ -333,53 +379,63 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
         if (index == -1) return
 
         // Set focus to previous block or next block before removing
-        val targetFocusId = if (index > 0) {
-            current.blocks[index - 1].id
-        } else {
-            current.blocks[index + 1].id
-        }
+        val targetFocusId =
+            if (index > 0) {
+                current.blocks[index - 1].id
+            } else {
+                current.blocks[index + 1].id
+            }
 
         val updatedList = current.blocks.toMutableList()
         updatedList.removeAt(index)
 
-        val updated = current.copy(
-            blocks = updatedList,
-            updatedAt = System.currentTimeMillis()
-        )
+        val updated =
+            current.copy(
+                blocks = updatedList,
+                updatedAt = System.currentTimeMillis(),
+            )
         _activeNote.value = updated
         _focusedBlockId.value = targetFocusId
         saveNoteDynamically(updated)
     }
 
-    fun applyStyleToSelection(blockId: String, styleType: StyleType, start: Int, end: Int) {
+    fun applyStyleToSelection(
+        blockId: String,
+        styleType: StyleType,
+        start: Int,
+        end: Int,
+    ) {
         val current = _activeNote.value ?: return
         if (start >= end) return
 
-        val updatedBlocks = current.blocks.map { block ->
-            if (block.id == blockId) {
-                val styles = block.inlineStyles.toMutableList()
+        val updatedBlocks =
+            current.blocks.map { block ->
+                if (block.id == blockId) {
+                    val styles = block.inlineStyles.toMutableList()
 
-                // If exact style exists for this selection range, toggle it off
-                val existingIndex = styles.indexOfFirst {
-                    it.styleType == styleType && it.start == start && it.end == end
-                }
-                if (existingIndex != -1) {
-                    styles.removeAt(existingIndex)
+                    // If exact style exists for this selection range, toggle it off
+                    val existingIndex =
+                        styles.indexOfFirst {
+                            it.styleType == styleType && it.start == start && it.end == end
+                        }
+                    if (existingIndex != -1) {
+                        styles.removeAt(existingIndex)
+                    } else {
+                        // Otherwise apply style. We can clean up overlapping styles for simplicity
+                        styles.add(InlineStyleSpan(styleType, start, end))
+                    }
+
+                    block.copy(inlineStyles = styles)
                 } else {
-                    // Otherwise apply style. We can clean up overlapping styles for simplicity
-                    styles.add(InlineStyleSpan(styleType, start, end))
+                    block
                 }
-
-                block.copy(inlineStyles = styles)
-            } else {
-                block
             }
-        }
 
-        val updated = current.copy(
-            blocks = updatedBlocks,
-            updatedAt = System.currentTimeMillis()
-        )
+        val updated =
+            current.copy(
+                blocks = updatedBlocks,
+                updatedAt = System.currentTimeMillis(),
+            )
         _activeNote.value = updated
         saveNoteDynamically(updated)
     }

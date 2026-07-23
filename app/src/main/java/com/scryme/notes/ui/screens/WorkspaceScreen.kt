@@ -1,21 +1,45 @@
 package com.scryme.notes.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.hoverable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,7 +55,7 @@ import com.scryme.notes.ui.viewmodel.NoteViewModel
 fun WorkspaceScreen(
     viewModel: NoteViewModel,
     onNoteSelected: (Note) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val allNotes by viewModel.allNotes.collectAsState()
     val activeNote by viewModel.activeNote.collectAsState()
@@ -41,53 +65,56 @@ fun WorkspaceScreen(
     var showSettingsDialog by remember { mutableStateOf(false) }
 
     // Group notes into tree hierarchy
-    val rootNotes = remember(allNotes, searchQuery) {
-        val roots = allNotes.filter { it.parentId == null }
-        if (searchQuery.isBlank()) {
-            roots
-        } else {
-            // If searching, flat filter list of matching notes
-            allNotes.filter { it.title.contains(searchQuery, ignoreCase = true) }
+    val rootNotes =
+        remember(allNotes, searchQuery) {
+            val roots = allNotes.filter { it.parentId == null }
+            if (searchQuery.isBlank()) {
+                roots
+            } else {
+                // If searching, flat filter list of matching notes
+                allNotes.filter { it.title.contains(searchQuery, ignoreCase = true) }
+            }
         }
-    }
 
     Column(
-        modifier = modifier
-            .fillMaxHeight()
-            .width(260.dp)
+        modifier =
+            modifier
+                .fillMaxHeight()
+                .width(260.dp),
     ) {
         // Workspace / Brand Header
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Default.Home,
                     contentDescription = "Workspace",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(22.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Personal Plan",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
             IconButton(
                 onClick = { showSettingsDialog = true },
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(24.dp),
             ) {
                 Icon(
                     imageVector = Icons.Default.Settings,
                     contentDescription = "Settings",
                     modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -101,61 +128,67 @@ fun WorkspaceScreen(
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = "Search",
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(16.dp),
                 )
             },
-            trailingIcon = if (searchQuery.isNotEmpty()) {
-                {
-                    IconButton(onClick = { viewModel.setSearchQuery("") }) {
-                        Icon(
-                            imageVector = Icons.Default.Clear,
-                            contentDescription = "Clear",
-                            modifier = Modifier.size(16.dp)
-                        )
+            trailingIcon =
+                if (searchQuery.isNotEmpty()) {
+                    {
+                        IconButton(onClick = { viewModel.setSearchQuery("") }) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Clear",
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
                     }
-                }
-            } else null,
+                } else {
+                    null
+                },
             singleLine = true,
             shape = RoundedCornerShape(8.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedContainerColor = Color.Transparent,
-                focusedContainerColor = Color.Transparent
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp)
-                .height(48.dp)
+            colors =
+                OutlinedTextFieldDefaults.colors(
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                ),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+                    .height(48.dp),
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         // Create New Root Page Button
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp)
-                .clickable { viewModel.createRootNote() },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .clickable { viewModel.createRootNote() },
             color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
-            shape = RoundedCornerShape(6.dp)
+            shape = RoundedCornerShape(6.dp),
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Add page",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(16.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Add a page",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
             }
         }
@@ -168,13 +201,14 @@ fun WorkspaceScreen(
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )
 
         LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
         ) {
             items(rootNotes, key = { it.id }) { note ->
                 HierarchyNode(
@@ -190,7 +224,7 @@ fun WorkspaceScreen(
                     onCreateChild = { parentId -> viewModel.createChildNote(parentId) },
                     onDelete = { viewModel.deleteNote(it.id) },
                     indentationLevel = 0,
-                    searchActive = searchQuery.isNotBlank()
+                    searchActive = searchQuery.isNotBlank(),
                 )
             }
         }
@@ -214,7 +248,7 @@ fun WorkspaceScreen(
                     Text("• Fully-Recursive Parent-Child Tree", fontWeight = FontWeight.Medium)
                     Text("• Notion Slash Commands (/) & Toolbar formatting", fontWeight = FontWeight.Medium)
                 }
-            }
+            },
         )
     }
 }
@@ -230,35 +264,38 @@ fun HierarchyNode(
     onCreateChild: (String) -> Unit,
     onDelete: (Note) -> Unit,
     indentationLevel: Int,
-    searchActive: Boolean
+    searchActive: Boolean,
 ) {
     val isSelected = activeNote?.id == note.id
     val isExpanded = expandedNoteIds.contains(note.id)
 
     // Find matching child notes from flat list
-    val children = remember(allNotes, note.id) {
-        allNotes.filter { it.parentId == note.id }
-    }
+    val children =
+        remember(allNotes, note.id) {
+            allNotes.filter { it.parentId == note.id }
+        }
     val hasChildren = children.isNotEmpty()
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = (indentationLevel * 12).dp)
-                .clickable { onNoteClick(note) }
-                .padding(vertical = 4.dp, horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = (indentationLevel * 12).dp)
+                    .clickable { onNoteClick(note) }
+                    .padding(vertical = 4.dp, horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             // Expand/Collapse arrow
             if (hasChildren && !searchActive) {
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = "Toggle nested",
-                    modifier = Modifier
-                        .size(18.dp)
-                        .clickable { onToggleExpand(note) },
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    modifier =
+                        Modifier
+                            .size(18.dp)
+                            .clickable { onToggleExpand(note) },
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
                 Spacer(modifier = Modifier.width(18.dp))
@@ -271,7 +308,7 @@ fun HierarchyNode(
                 imageVector = Icons.AutoMirrored.Filled.List,
                 contentDescription = "Page Icon",
                 modifier = Modifier.size(16.dp),
-                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -284,35 +321,35 @@ fun HierarchyNode(
                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
 
             // Add Child Page & Delete Button
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 IconButton(
                     onClick = { onCreateChild(note.id) },
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(24.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Add child page",
                         modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
                 IconButton(
                     onClick = { onDelete(note) },
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(24.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete page",
                         modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
                     )
                 }
             }
@@ -332,7 +369,7 @@ fun HierarchyNode(
                         onCreateChild = onCreateChild,
                         onDelete = onDelete,
                         indentationLevel = indentationLevel + 1,
-                        searchActive = searchActive
+                        searchActive = searchActive,
                     )
                 }
             }
