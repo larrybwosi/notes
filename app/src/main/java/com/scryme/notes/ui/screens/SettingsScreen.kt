@@ -16,9 +16,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.scryme.notes.R
 import com.scryme.notes.ui.viewmodel.NoteViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -465,33 +467,45 @@ fun SettingsScreen(
 
             // Section 4: About
             SettingsSection(title = "About Scryme Notes") {
-                Column(
+                Row(
                     modifier =
                         Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = "Scryme Notes v1.0.0",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                        contentDescription = "Scryme Notes Logo",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(48.dp),
                     )
-                    Text(
-                        text = "A modern Notion-like block editor featuring sub-notebook hierarchy, markdown shortcuts, rich inline text formatting, Obsidian-style organization, and collaborative high-fidelity UI avatars.",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 16.sp,
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Built with Jetpack Compose & SQLite.",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = "Scryme Notes v1.0.0",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = "A modern Notion-like block editor featuring sub-notebook hierarchy, markdown shortcuts, rich inline text formatting, Obsidian-style organization, and collaborative high-fidelity UI avatars.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 16.sp,
+                        )
+                    }
                 }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Built with Jetpack Compose & SQLite.",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
             }
         }
     }

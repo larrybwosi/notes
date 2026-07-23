@@ -10,12 +10,24 @@ android {
     namespace = "com.scryme.notes"
     compileSdk = 34
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("signing-key.jks")
+            storePassword = "scrymenotes"
+            keyAlias = "scryme"
+            keyPassword = "scrymenotes"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.scryme.notes"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+
+        val apkVersionCode = project.findProperty("apkVersionCode")?.toString()?.toIntOrNull() ?: 1
+        val apkVersionName = project.findProperty("apkVersionName")?.toString() ?: "1.0.0"
+        versionCode = apkVersionCode
+        versionName = apkVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -30,7 +42,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {

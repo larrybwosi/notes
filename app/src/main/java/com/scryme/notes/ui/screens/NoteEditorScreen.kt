@@ -37,7 +37,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Popup
+import com.scryme.notes.R
 import com.scryme.notes.domain.model.Block
 import com.scryme.notes.domain.model.BlockType
 import com.scryme.notes.domain.model.StyleType
@@ -91,6 +93,26 @@ fun NoteEditorScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 20.dp, vertical = 24.dp),
         ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 16.dp),
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                    contentDescription = "Scryme Notes Logo",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp),
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "SCRYME NOTES",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    letterSpacing = 1.5.sp,
+                )
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
