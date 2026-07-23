@@ -1,6 +1,7 @@
 package com.scryme.notes.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -11,10 +12,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
@@ -62,88 +64,169 @@ fun NoteEditorScreen(
             else -> FontFamily.Default
         }
 
+    val allNotes by viewModel.allNotes.collectAsState()
+    val userName by viewModel.userName.collectAsState()
+
     var activeSelection by remember { mutableStateOf<TextRange?>(null) }
 
     if (activeNote == null) {
-        Box(
+        val recentlyAdded =
+            remember(allNotes) {
+                allNotes.sortedByDescending { it.updatedAt }
+            }
+
+        val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
+        val greeting =
+            when {
+                hour < 12 -> "Good Morning"
+                hour < 17 -> "Good Afternoon"
+                else -> "Good Evening"
+            }
+
+        Column(
             modifier =
                 modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
-            contentAlignment = Alignment.Center,
+                    .background(MaterialTheme.colorScheme.background)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 24.dp),
         ) {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Surface(
-                    modifier = Modifier.size(96.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                Column {
+                    Text(
+                        text = "$greeting, $userName",
+                        style =
+                            MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontSize = 24.sp,
+                            ),
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Let's capture something new today.",
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                            ),
+                    )
+                }
+
+                IconButton(
+                    onClick = { viewModel.createRootNote() },
+                    modifier =
+                        Modifier
+                            .size(48.dp)
+                            .background(MaterialTheme.colorScheme.surface, CircleShape)
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                shape = CircleShape,
+                            ),
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Create new note",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                Text(
+                    text = "Recently Added",
+                    style =
+                        MaterialTheme.typography.headlineLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontSize = 28.sp,
+                        ),
+                )
+
+                Text(
+                    text = "${allNotes.size} Notes",
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            fontWeight = FontWeight.Medium,
+                        ),
+                    modifier = Modifier.padding(bottom = 2.dp),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (recentlyAdded.isEmpty()) {
+                Card(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border =
+                        androidx.compose.foundation.BorderStroke(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                        ),
+                ) {
+                    Column(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.MenuBook,
-                            contentDescription = "Premium Book Icon",
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Empty Notes",
                             modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "No notes captured yet",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Tap the edit icon above to write your first beautiful note.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = "Welcome to Scryme Notes",
-                    style =
-                        MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground,
-                        ),
-                    textAlign = TextAlign.Center,
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "A beautiful block-based workspace with nested notebooks, markdown shortcuts, rich text formatting, and obsidian style organization.",
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Button(
-                        onClick = { viewModel.createRootNote("My First Note") },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+            } else {
+                val chunkedNotes = recentlyAdded.chunked(2)
+                chunkedNotes.forEach { rowNotes ->
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Create page")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Create a New Note", fontWeight = FontWeight.SemiBold)
-                    }
-
-                    OutlinedButton(
-                        onClick = onOpenSidebar,
-                        shape = RoundedCornerShape(12.dp),
-                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-                    ) {
-                        Icon(Icons.Default.Folder, contentDescription = "Browse folders")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Browse Notes", fontWeight = FontWeight.SemiBold)
+                        rowNotes.forEach { note ->
+                            Box(modifier = Modifier.weight(1f)) {
+                                NoteGridCard(note = note, viewModel = viewModel)
+                            }
+                        }
+                        if (rowNotes.size < 2) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                 }
             }
@@ -1149,5 +1232,162 @@ private fun getBlockIcon(type: BlockType): androidx.compose.ui.graphics.vector.I
         BlockType.CALLOUT -> Icons.Default.Lightbulb
         BlockType.CODE_BLOCK -> Icons.Default.Code
         else -> Icons.Default.Title
+    }
+}
+
+@Composable
+fun NoteGridCard(
+    note: com.scryme.notes.domain.model.Note,
+    viewModel: NoteViewModel,
+) {
+    val tags = listOf("Random", "Work", "Goals", "Personal", "Journal")
+    val tag =
+        remember(note.id) {
+            tags[kotlin.math.abs(note.id.hashCode()) % tags.size]
+        }
+
+    val (tagBg, tagText) =
+        when (tag) {
+            "Work" -> Pair(Color(0xFFE0F2FE), Color(0xFF0369A1)) // Blue
+            "Personal" -> Pair(Color(0xFFFCE7F3), Color(0xFFBE185D)) // Pink
+            "Goals" -> Pair(Color(0xFFDCFCE7), Color(0xFF15803D)) // Green
+            "Journal" -> Pair(Color(0xFFF3E8FF), Color(0xFF6B21A8)) // Purple
+            else -> Pair(Color(0xFFF1F5F9), Color(0xFF475569)) // Gray
+        }
+
+    val previewText =
+        remember(note.blocks) {
+            note.blocks.joinToString(" ") { it.text }.trim()
+        }
+
+    Card(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { viewModel.selectNote(note.id) },
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border =
+            androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+            ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    color = tagBg,
+                    shape = RoundedCornerShape(8.dp),
+                ) {
+                    Text(
+                        text = tag,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = tagText,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    )
+                }
+
+                Icon(
+                    imageVector = Icons.Default.NorthEast,
+                    contentDescription = "Open Note",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (tag == "Random" && note.title.contains("Pause", ignoreCase = true)) {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    val colors = listOf(Color(0xFFE2E8F0), Color(0xFFCBD5E1), Color(0xFF94A3B8))
+                    colors.forEach { c ->
+                        Box(
+                            modifier =
+                                Modifier
+                                    .size(width = 30.dp, height = 20.dp)
+                                    .background(c, RoundedCornerShape(4.dp)),
+                        )
+                    }
+                }
+            } else if (tag == "Goals" && note.title.contains("Goals", ignoreCase = true)) {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(24.dp)
+                                .background(Color(0xFFFEF3C7), RoundedCornerShape(6.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("☕", fontSize = 12.sp)
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+            }
+
+            Text(
+                text = if (note.title.isBlank()) "Untitled" else note.title,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = if (previewText.isEmpty()) "No content" else previewText,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                lineHeight = 16.sp,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = getElapsedTimeString(note.updatedAt),
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            )
+        }
+    }
+}
+
+fun getElapsedTimeString(updatedAt: Long): String {
+    val diff = System.currentTimeMillis() - updatedAt
+    val seconds = diff / 1000
+    val minutes = seconds / 60
+    val hours = minutes / 60
+    val days = hours / 24
+    return when {
+        seconds < 60 -> "Just now"
+        minutes < 60 -> "${minutes}m ago"
+        hours < 24 -> "${hours}h ago"
+        else -> "${days}d ago"
     }
 }

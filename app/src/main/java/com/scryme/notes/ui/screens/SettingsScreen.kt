@@ -32,6 +32,9 @@ fun SettingsScreen(
     val selectedFontPref by viewModel.fontFamilyPreference.collectAsState()
     val activeAccentColorVal by viewModel.accentColorVal.collectAsState()
     val markdownEnabled by viewModel.markdownEnabled.collectAsState()
+    val userName by viewModel.userName.collectAsState()
+    val dailyReminderEnabled by viewModel.dailyReminderEnabled.collectAsState()
+    val dailyReminderTime by viewModel.dailyReminderTime.collectAsState()
 
     var showClearConfirmDialog by remember { mutableStateOf(false) }
 
@@ -74,6 +77,41 @@ fun SettingsScreen(
                     .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
+            // Section 0: Profile Settings
+            SettingsSection(title = "Profile Settings") {
+                Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                    Text(
+                        text = "User Name",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = "Customize your name for personalized greetings",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    var nameInput by remember(userName) { mutableStateOf(userName) }
+                    OutlinedTextField(
+                        value = nameInput,
+                        onValueChange = {
+                            nameInput = it
+                            viewModel.setUserName(it)
+                        },
+                        singleLine = true,
+                        placeholder = { Text("Enter your name") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors =
+                            OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                            ),
+                    )
+                }
+            }
+
             // Section 1: Appearance
             SettingsSection(title = "Appearance") {
                 // Theme Toggle row
@@ -148,6 +186,119 @@ fun SettingsScreen(
                                     )
                                 }
                             }
+                        }
+                    }
+                }
+            }
+
+            // Section 1.5: Notifications & Reminders
+            SettingsSection(title = "Notifications & Reminders") {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Daily Notes Reminder",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = "Receive a daily reminder notification to write notes",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = dailyReminderEnabled,
+                        onCheckedChange = { viewModel.setDailyReminderEnabled(it) },
+                    )
+                }
+
+                if (dailyReminderEnabled) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column {
+                            Text(
+                                text = "Reminder Time",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Text(
+                                text = "Set the time when you want to be reminded daily",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+
+                        var showTimeDialog by remember { mutableStateOf(false) }
+                        TextButton(onClick = { showTimeDialog = true }) {
+                            Text(dailyReminderTime, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
+
+                        if (showTimeDialog) {
+                            val initialParts = dailyReminderTime.split(":")
+                            var hour by remember { mutableStateOf(initialParts.firstOrNull()?.toIntOrNull() ?: 9) }
+                            var minute by remember { mutableStateOf(initialParts.lastOrNull()?.toIntOrNull() ?: 0) }
+
+                            AlertDialog(
+                                onDismissRequest = { showTimeDialog = false },
+                                confirmButton = {
+                                    TextButton(
+                                        onClick = {
+                                            val timeStr = String.format("%02d:%02d", hour, minute)
+                                            viewModel.setDailyReminderTime(timeStr)
+                                            showTimeDialog = false
+                                        },
+                                    ) {
+                                        Text("Set Time", fontWeight = FontWeight.Bold)
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showTimeDialog = false }) {
+                                        Text("Cancel")
+                                    }
+                                },
+                                title = { Text("Set Reminder Time") },
+                                text = {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text("Hour: ", fontWeight = FontWeight.Bold)
+                                        IconButton(onClick = { hour = (hour + 23) % 24 }) {
+                                            Icon(Icons.Default.Remove, "minus")
+                                        }
+                                        Text(String.format("%02d", hour), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                        IconButton(onClick = { hour = (hour + 1) % 24 }) {
+                                            Icon(Icons.Default.Add, "plus")
+                                        }
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Text("Minute: ", fontWeight = FontWeight.Bold)
+                                        IconButton(onClick = { minute = (minute + 55) % 60 }) {
+                                            Icon(Icons.Default.Remove, "minus")
+                                        }
+                                        Text(String.format("%02d", minute), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                        IconButton(onClick = { minute = (minute + 5) % 60 }) {
+                                            Icon(Icons.Default.Add, "plus")
+                                        }
+                                    }
+                                },
+                            )
                         }
                     }
                 }
