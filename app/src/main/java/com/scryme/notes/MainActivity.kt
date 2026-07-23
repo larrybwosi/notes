@@ -39,11 +39,38 @@ import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     private val viewModel: NoteViewModel by viewModels {
-        NoteViewModelFactory(DatabaseProvider.getRepository(applicationContext))
+        NoteViewModelFactory(DatabaseProvider.getRepository(applicationContext), applicationContext)
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        val launchNoteId = intent.getStringExtra("LAUNCH_NOTE_ID")
+        if (!launchNoteId.isNullOrEmpty()) {
+            viewModel.selectNote(launchNoteId)
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val launchNoteId = intent?.getStringExtra("LAUNCH_NOTE_ID")
+        if (!launchNoteId.isNullOrEmpty()) {
+            viewModel.selectNote(launchNoteId)
+        }
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            val permissionCheck = androidx.core.content.ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            )
+            if (permissionCheck != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                androidx.core.app.ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    101
+                )
+            }
+        }
 
         setContent {
             val isDark by viewModel.isDarkMode.collectAsState()
@@ -307,6 +334,7 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
         ) {
             BottomSheetContent(
                 note = activeNote!!,
+                viewModel = viewModel,
                 onDismiss = { showBottomSheet = false },
                 onDeleteNote = {
                     activeNote?.let {
@@ -328,6 +356,7 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
 @Composable
 fun BottomSheetContent(
     note: Note,
+    viewModel: NoteViewModel,
     onDismiss: () -> Unit,
     onDeleteNote: () -> Unit,
     onDuplicateNote: () -> Unit,
@@ -392,10 +421,89 @@ fun BottomSheetContent(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        var showReminderDialog by remember { mutableStateOf(false) }
+
+        if (showReminderDialog) {
+            val currentReminder = remember(note.id) { viewModel.getNoteReminder(note.id) }
+            val sdf = remember { java.text.SimpleDateFormat("MMM d, yyyy HH:mm", java.util.Locale.getDefault()) }
+            val currentReminderStr = if (currentReminder > 0) sdf.format(java.util.Date(currentReminder)) else "None"
+
+            AlertDialog(
+                onDismissRequest = { showReminderDialog = false },
+                confirmButton = {
+                    TextButton(onClick = { showReminderDialog = false }) {
+                        Text("Done", fontWeight = FontWeight.Bold)
+                    }
+                },
+                title = { Text("Set Reminder for Note") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Current Reminder: $currentReminderStr", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Button(
+                            onClick = {
+                                viewModel.setNoteReminder(note.id, note.title, System.currentTimeMillis() + 10_000L)
+                                showReminderDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                        ) {
+                            Text("In 10 Seconds (Fast Test)")
+                        }
+
+                        Button(
+                            onClick = {
+                                viewModel.setNoteReminder(note.id, note.title, System.currentTimeMillis() + 60_000L)
+                                showReminderDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("In 1 Minute")
+                        }
+
+                        Button(
+                            onClick = {
+                                viewModel.setNoteReminder(note.id, note.title, System.currentTimeMillis() + 3600_000L)
+                                showReminderDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("In 1 Hour")
+                        }
+
+                        Button(
+                            onClick = {
+                                viewModel.setNoteReminder(note.id, note.title, System.currentTimeMillis() + 24 * 3600_000L)
+                                showReminderDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("In 24 Hours")
+                        }
+
+                        if (currentReminder > 0) {
+                            Button(
+                                onClick = {
+                                    viewModel.cancelNoteReminder(note.id)
+                                    showReminderDialog = false
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer)
+                            ) {
+                                Text("Cancel Reminder")
+                            }
+                        }
+                    }
+                }
+            )
+        }
+
         // Vertical Option Rows
         val options =
             listOf(
                 Triple("Pin", Icons.Default.PushPin, {}),
+                Triple("Set Reminder", Icons.Default.NotificationsActive, { showReminderDialog = true }),
                 Triple("Add Thumbnail", Icons.Default.AddPhotoAlternate, {}),
                 Triple("Label", Icons.Default.Label, {}),
                 Triple("Send", Icons.Default.Send, {}),

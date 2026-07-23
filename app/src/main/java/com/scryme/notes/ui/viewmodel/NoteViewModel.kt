@@ -16,7 +16,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
+class NoteViewModel(
+    private val repository: NoteRepository,
+    private val context: android.content.Context? = null
+) : ViewModel() {
     private val _allNotes = MutableStateFlow<List<Note>>(emptyList())
     val allNotes: StateFlow<List<Note>> = _allNotes.asStateFlow()
 
@@ -42,32 +45,166 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     // --- Settings Preferences ---
-    private val _isDarkMode = MutableStateFlow(false)
+    private val prefs = context?.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+
+    private val _isDarkMode = MutableStateFlow(prefs?.getBoolean("is_dark_mode", false) ?: false)
     val isDarkMode: StateFlow<Boolean> = _isDarkMode.asStateFlow()
 
-    private val _fontFamilyPreference = MutableStateFlow("Sans-Serif")
+    private val _fontFamilyPreference = MutableStateFlow(prefs?.getString("font_family_pref", "Sans-Serif") ?: "Sans-Serif")
     val fontFamilyPreference: StateFlow<String> = _fontFamilyPreference.asStateFlow()
 
-    private val _accentColorVal = MutableStateFlow(0xFF1B63C2.toInt())
+    private val _accentColorVal = MutableStateFlow(prefs?.getInt("accent_color_val", 0xFF1B63C2.toInt()) ?: 0xFF1B63C2.toInt())
     val accentColorVal: StateFlow<Int> = _accentColorVal.asStateFlow()
 
-    private val _markdownEnabled = MutableStateFlow(true)
+    private val _markdownEnabled = MutableStateFlow(prefs?.getBoolean("markdown_enabled", true) ?: true)
     val markdownEnabled: StateFlow<Boolean> = _markdownEnabled.asStateFlow()
+
+    private val _userName = MutableStateFlow(prefs?.getString("user_name", "Abigail") ?: "Abigail")
+    val userName: StateFlow<String> = _userName.asStateFlow()
+
+    private val _dailyReminderEnabled = MutableStateFlow(prefs?.getBoolean("daily_reminder_enabled", false) ?: false)
+    val dailyReminderEnabled: StateFlow<Boolean> = _dailyReminderEnabled.asStateFlow()
+
+    private val _dailyReminderTime = MutableStateFlow(prefs?.getString("daily_reminder_time", "09:00") ?: "09:00")
+    val dailyReminderTime: StateFlow<String> = _dailyReminderTime.asStateFlow()
 
     fun setDarkMode(enabled: Boolean) {
         _isDarkMode.value = enabled
+        prefs?.edit()?.putBoolean("is_dark_mode", enabled)?.apply()
     }
 
     fun setFontFamilyPreference(font: String) {
         _fontFamilyPreference.value = font
+        prefs?.edit()?.putString("font_family_pref", font)?.apply()
     }
 
     fun setAccentColorVal(colorVal: Int) {
         _accentColorVal.value = colorVal
+        prefs?.edit()?.putInt("accent_color_val", colorVal)?.apply()
     }
 
     fun setMarkdownEnabled(enabled: Boolean) {
         _markdownEnabled.value = enabled
+        prefs?.edit()?.putBoolean("markdown_enabled", enabled)?.apply()
+    }
+
+    fun setUserName(name: String) {
+        _userName.value = name
+        prefs?.edit()?.putString("user_name", name)?.apply()
+    }
+
+    fun setDailyReminderEnabled(enabled: Boolean) {
+        _dailyReminderEnabled.value = enabled
+        prefs?.edit()?.putBoolean("daily_reminder_enabled", enabled)?.apply()
+        if (enabled) {
+            scheduleDailyReminder()
+        } else {
+            cancelDailyReminder()
+        }
+    }
+
+    fun setDailyReminderTime(time: String) {
+        _dailyReminderTime.value = time
+        prefs?.edit()?.putString("daily_reminder_time", time)?.apply()
+        if (_dailyReminderEnabled.value) {
+            scheduleDailyReminder()
+        }
+    }
+
+    private fun scheduleDailyReminder() {
+        val context = context ?: return
+        val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as? android.app.AlarmManager ?: return
+        val intent = android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
+            action = "DAILY_REMINDER"
+        }
+        val pendingIntent = android.app.PendingIntent.getBroadcast(
+            context,
+            999,
+            intent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val timeParts = _dailyReminderTime.value.split(":")
+        if (timeParts.size != 2) return
+        val hour = timeParts[0].toIntOrNull() ?: 9
+        val minute = timeParts[1].toIntOrNull() ?: 0
+
+        val calendar = java.util.Calendar.getInstance().apply {
+            timeInMillis = System.currentTimeMillis()
+            set(java.util.Calendar.HOUR_OF_DAY, hour)
+            set(java.util.Calendar.MINUTE, minute)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+            if (timeInMillis <= System.currentTimeMillis()) {
+                add(java.util.Calendar.DAY_OF_YEAR, 1)
+            }
+        }
+
+        alarmManager.setAndAllowWhileIdle(
+            android.app.AlarmManager.RTC_WAKEUP,
+            calendar.timeInMillis,
+            pendingIntent
+        )
+    }
+
+    private fun cancelDailyReminder() {
+        val context = context ?: return
+        val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as? android.app.AlarmManager ?: return
+        val intent = android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
+            action = "DAILY_REMINDER"
+        }
+        val pendingIntent = android.app.PendingIntent.getBroadcast(
+            context,
+            999,
+            intent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.cancel(pendingIntent)
+    }
+
+    fun setNoteReminder(noteId: String, noteTitle: String, timestamp: Long) {
+        val context = context ?: return
+        val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as? android.app.AlarmManager ?: return
+        val intent = android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
+            action = "NOTE_REMINDER"
+            putExtra("NOTE_ID", noteId)
+            putExtra("NOTE_TITLE", noteTitle)
+        }
+        val requestCode = noteId.hashCode()
+        val pendingIntent = android.app.PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        alarmManager.setAndAllowWhileIdle(
+            android.app.AlarmManager.RTC_WAKEUP,
+            timestamp,
+            pendingIntent
+        )
+        prefs?.edit()?.putLong("reminder_note_$noteId", timestamp)?.apply()
+    }
+
+    fun cancelNoteReminder(noteId: String) {
+        val context = context ?: return
+        val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as? android.app.AlarmManager ?: return
+        val intent = android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
+            action = "NOTE_REMINDER"
+        }
+        val requestCode = noteId.hashCode()
+        val pendingIntent = android.app.PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.cancel(pendingIntent)
+        prefs?.edit()?.remove("reminder_note_$noteId")?.apply()
+    }
+
+    fun getNoteReminder(noteId: String): Long {
+        return prefs?.getLong("reminder_note_$noteId", 0L) ?: 0L
     }
 
     fun clearAllNotes() {
@@ -494,11 +631,14 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
     }
 }
 
-class NoteViewModelFactory(private val repository: NoteRepository) : ViewModelProvider.Factory {
+class NoteViewModelFactory(
+    private val repository: NoteRepository,
+    private val context: android.content.Context
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(NoteViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return NoteViewModel(repository) as T
+            return NoteViewModel(repository, context) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

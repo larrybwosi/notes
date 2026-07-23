@@ -190,4 +190,28 @@ class NoteViewModelTest {
             assertEquals(12, block.inlineStyles[0].start)
             assertEquals(18, block.inlineStyles[0].end)
         }
+
+    @Test
+    fun testSetUserName_CorrectlyUpdatesState() =
+        runTest {
+            // Act
+            viewModel.setUserName("Harrison")
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // Assert
+            assertEquals("Harrison", viewModel.userName.value)
+        }
+
+    @Test
+    fun testSetDailyReminder_CorrectlyUpdatesState() =
+        runTest {
+            // Act
+            viewModel.setDailyReminderEnabled(true)
+            viewModel.setDailyReminderTime("08:30")
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // Assert
+            assertTrue(viewModel.dailyReminderEnabled.value)
+            assertEquals("08:30", viewModel.dailyReminderTime.value)
+        }
 }
