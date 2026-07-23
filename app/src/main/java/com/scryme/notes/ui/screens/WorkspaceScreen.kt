@@ -25,6 +25,8 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,16 +63,26 @@ fun WorkspaceScreen(
     val expandedNoteIds by viewModel.expandedNoteIds.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val pinnedNotes = remember(allNotes) {
+        val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+        prefs.getStringSet("pinned_notes", emptySet()) ?: emptySet()
+    }
+
     // Group notes into tree hierarchy
     val rootNotes =
-        remember(allNotes, searchQuery) {
+        remember(allNotes, searchQuery, pinnedNotes) {
             val roots = allNotes.filter { it.parentId == null }
-            if (searchQuery.isBlank()) {
+            val filtered = if (searchQuery.isBlank()) {
                 roots
             } else {
                 // If searching, flat filter list of matching notes
                 allNotes.filter { it.title.contains(searchQuery, ignoreCase = true) }
             }
+            filtered.sortedWith(
+                compareByDescending<com.scryme.notes.domain.model.Note> { pinnedNotes.contains(it.id) }
+                    .thenByDescending { it.updatedAt }
+            )
         }
 
     Column(
@@ -292,6 +304,17 @@ fun HierarchyNode(
 
             Spacer(modifier = Modifier.width(8.dp))
 
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val isPinned = remember(note.id) {
+                val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                val pinnedSet = prefs.getStringSet("pinned_notes", emptySet()) ?: emptySet()
+                pinnedSet.contains(note.id)
+            }
+            val isLocked = remember(note.id) {
+                val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                prefs.getBoolean("locked_note_${note.id}", false)
+            }
+
             // Note Title
             Text(
                 text = if (note.title.isBlank()) "Untitled" else note.title,
@@ -302,6 +325,23 @@ fun HierarchyNode(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
+
+            if (isPinned) {
+                Icon(
+                    imageVector = Icons.Default.PushPin,
+                    contentDescription = "Pinned",
+                    modifier = Modifier.size(12.dp).padding(end = 4.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+            if (isLocked) {
+                Icon(
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = "Locked",
+                    modifier = Modifier.size(12.dp).padding(end = 4.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                )
+            }
 
             // Add Child Page & Delete Button
             Row(

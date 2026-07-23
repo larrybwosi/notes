@@ -47,7 +47,7 @@ fun SettingsScreen(
             Pair("Red", 0xFFD11A2A.toInt()),
         )
 
-    val fontFamilies = listOf("Sans-Serif", "Serif", "Monospace")
+    val fontFamilies = listOf("Sans-Serif", "Serif", "Monospace", "Inter", "Roboto")
 
     Scaffold(
         topBar = {
