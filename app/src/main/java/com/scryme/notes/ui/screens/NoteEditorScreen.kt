@@ -46,17 +46,18 @@ import com.scryme.notes.domain.model.BlockType
 import com.scryme.notes.domain.model.StyleType
 import com.scryme.notes.ui.components.RichTextTransformer
 import com.scryme.notes.ui.viewmodel.NoteViewModel
-import com.scryme.notes.R
 
-val InterFontFamily = FontFamily(
-    Font(R.font.inter_regular, FontWeight.Normal),
-    Font(R.font.inter_bold, FontWeight.Bold)
-)
+val InterFontFamily =
+    FontFamily(
+        Font(R.font.inter_regular, FontWeight.Normal),
+        Font(R.font.inter_bold, FontWeight.Bold),
+    )
 
-val RobotoFontFamily = FontFamily(
-    Font(R.font.roboto_regular, FontWeight.Normal),
-    Font(R.font.roboto_bold, FontWeight.Bold)
-)
+val RobotoFontFamily =
+    FontFamily(
+        Font(R.font.roboto_regular, FontWeight.Normal),
+        Font(R.font.roboto_bold, FontWeight.Bold),
+    )
 
 @Composable
 fun NoteEditorScreen(
@@ -87,14 +88,44 @@ fun NoteEditorScreen(
 
     if (activeNote == null) {
         val context = androidx.compose.ui.platform.LocalContext.current
-        val recentlyAdded =
-            remember(allNotes) {
+        var selectedLabelFilter by remember { mutableStateOf("All") }
+        var showSortMenu by remember { mutableStateOf(false) }
+        var selectedSortOption by remember { mutableStateOf("Updated") } // "Updated", "Title", "Created"
+
+        val labelTags = listOf("All", "Work", "Personal", "Goals", "Journal", "Random")
+
+        val filteredAndSortedNotes =
+            remember(allNotes, selectedLabelFilter, selectedSortOption) {
                 val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
                 val pinnedSet = prefs.getStringSet("pinned_notes", emptySet()) ?: emptySet()
-                allNotes.sortedWith(
-                    compareByDescending<com.scryme.notes.domain.model.Note> { pinnedSet.contains(it.id) }
-                        .thenByDescending { it.updatedAt }
-                )
+
+                val filtered =
+                    allNotes.filter { note ->
+                        if (selectedLabelFilter == "All") {
+                            true
+                        } else {
+                            val noteLabel =
+                                prefs.getString("label_note_${note.id}", null) ?: run {
+                                    val tags = listOf("Random", "Work", "Goals", "Personal", "Journal")
+                                    tags[kotlin.math.abs(note.id.hashCode()) % tags.size]
+                                }
+                            noteLabel.equals(selectedLabelFilter, ignoreCase = true)
+                        }
+                    }
+
+                filtered.sortedWith { n1, n2 ->
+                    val p1 = pinnedSet.contains(n1.id)
+                    val p2 = pinnedSet.contains(n2.id)
+                    if (p1 != p2) {
+                        if (p1) -1 else 1
+                    } else {
+                        when (selectedSortOption) {
+                            "Title" -> n1.title.compareTo(n2.title, ignoreCase = true)
+                            "Created" -> n2.createdAt.compareTo(n1.createdAt)
+                            else -> n2.updatedAt.compareTo(n1.updatedAt) // "Updated"
+                        }
+                    }
+                }
             }
 
         val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
@@ -130,6 +161,7 @@ fun NoteEditorScreen(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
                     letterSpacing = 1.5.sp,
+                    fontFamily = selectedFontFamily,
                 )
             }
 
@@ -146,6 +178,7 @@ fun NoteEditorScreen(
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground,
                                 fontSize = 24.sp,
+                                fontFamily = selectedFontFamily,
                             ),
                     )
                     Spacer(modifier = Modifier.height(4.dp))
@@ -154,6 +187,7 @@ fun NoteEditorScreen(
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                fontFamily = selectedFontFamily,
                             ),
                     )
                 }
@@ -178,37 +212,117 @@ fun NoteEditorScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
+            // Label Filters Row
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = "Recently Added",
-                    style =
-                        MaterialTheme.typography.headlineLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontSize = 28.sp,
-                        ),
-                )
-
-                Text(
-                    text = "${allNotes.size} Notes",
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            fontWeight = FontWeight.Medium,
-                        ),
-                    modifier = Modifier.padding(bottom = 2.dp),
-                )
+                labelTags.forEach { label ->
+                    val isSelected = selectedLabelFilter == label
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { selectedLabelFilter = label },
+                        label = { Text(label, fontSize = 12.sp, fontFamily = selectedFontFamily) },
+                        colors =
+                            FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            ),
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (recentlyAdded.isEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = if (selectedLabelFilter == "All") "Recently Added" else "$selectedLabelFilter Notes",
+                        style =
+                            MaterialTheme.typography.headlineLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontSize = 24.sp,
+                                fontFamily = selectedFontFamily,
+                            ),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "(${filteredAndSortedNotes.size})",
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                fontFamily = selectedFontFamily,
+                            ),
+                    )
+                }
+
+                // Sort Dropdown Selector
+                Box {
+                    val sortLabel =
+                        when (selectedSortOption) {
+                            "Title" -> "A-Z"
+                            "Created" -> "Newest"
+                            else -> "Recent"
+                        }
+                    InputChip(
+                        selected = true,
+                        onClick = { showSortMenu = true },
+                        label = { Text("Sort: $sortLabel", fontSize = 12.sp, fontFamily = selectedFontFamily) },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = "Sort Options",
+                                modifier = Modifier.size(16.dp),
+                            )
+                        },
+                    )
+
+                    DropdownMenu(
+                        expanded = showSortMenu,
+                        onDismissRequest = { showSortMenu = false },
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Last Updated", fontSize = 13.sp, fontFamily = selectedFontFamily) },
+                            leadingIcon = { Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                            onClick = {
+                                selectedSortOption = "Updated"
+                                showSortMenu = false
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Title (A-Z)", fontSize = 13.sp, fontFamily = selectedFontFamily) },
+                            leadingIcon = { Icon(Icons.Default.Sort, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                            onClick = {
+                                selectedSortOption = "Title"
+                                showSortMenu = false
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Date Created", fontSize = 13.sp, fontFamily = selectedFontFamily) },
+                            leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                            onClick = {
+                                selectedSortOption = "Created"
+                                showSortMenu = false
+                            },
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (filteredAndSortedNotes.isEmpty()) {
                 Card(
                     modifier =
                         Modifier
@@ -252,7 +366,7 @@ fun NoteEditorScreen(
                     }
                 }
             } else {
-                val chunkedNotes = recentlyAdded.chunked(2)
+                val chunkedNotes = filteredAndSortedNotes.chunked(2)
                 chunkedNotes.forEach { rowNotes ->
                     Row(
                         modifier =
@@ -280,10 +394,11 @@ fun NoteEditorScreen(
 
     // Lock Screen implementation
     val context = androidx.compose.ui.platform.LocalContext.current
-    val isNoteLocked = remember(note.id) {
-        val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-        prefs.getBoolean("locked_note_${note.id}", false)
-    }
+    val isNoteLocked =
+        remember(note.id) {
+            val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+            prefs.getBoolean("locked_note_${note.id}", false)
+        }
     var isUnlockedSession by remember(note.id) { mutableStateOf(false) }
 
     if (isNoteLocked && !isUnlockedSession) {
@@ -291,10 +406,11 @@ fun NoteEditorScreen(
         var isError by remember { mutableStateOf(false) }
 
         Column(
-            modifier = modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(24.dp),
+            modifier =
+                modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -381,6 +497,7 @@ fun NoteEditorScreen(
                         fontWeight = FontWeight.Medium,
                         color = if (idx == breadcrumbs.lastIndex) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.primary,
                         modifier = Modifier.clickable { viewModel.selectNote(crumb.id) },
+                        fontFamily = selectedFontFamily,
                     )
                     if (idx < breadcrumbs.lastIndex) {
                         Icon(
@@ -396,15 +513,16 @@ fun NoteEditorScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Emoji Thumbnail if exists
-            val thumbnailEmoji = remember(note.id, note.updatedAt) {
-                val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-                prefs.getString("thumbnail_note_${note.id}", null)
-            }
+            val thumbnailEmoji =
+                remember(note.id, note.updatedAt) {
+                    val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                    prefs.getString("thumbnail_note_${note.id}", null)
+                }
             if (thumbnailEmoji != null) {
                 Text(
                     text = thumbnailEmoji,
                     fontSize = 48.sp,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
             }
 
@@ -421,6 +539,7 @@ fun NoteEditorScreen(
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
+                        fontFamily = selectedFontFamily,
                     ),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 decorationBox = { innerTextField ->
@@ -432,6 +551,7 @@ fun NoteEditorScreen(
                                     fontSize = 32.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                    fontFamily = selectedFontFamily,
                                 ),
                         )
                     }
@@ -449,6 +569,7 @@ fun NoteEditorScreen(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    fontFamily = selectedFontFamily,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 subNotes.forEach { sub ->
@@ -472,6 +593,7 @@ fun NoteEditorScreen(
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Medium,
+                            fontFamily = selectedFontFamily,
                         )
                     }
                 }
@@ -569,6 +691,15 @@ fun NoteEditorScreen(
                             }
                         },
                     )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    AttachmentsSection(
+                        noteId = note.id,
+                        selectedFontFamily = selectedFontFamily,
+                    )
+                    Spacer(modifier = Modifier.height(64.dp))
                 }
             }
         }
@@ -974,9 +1105,10 @@ fun BlockEditorItem(
             when (block.type) {
                 BlockType.BULLETED_LIST_ITEM -> {
                     Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .padding(end = 8.dp),
+                        modifier =
+                            Modifier
+                                .size(20.dp)
+                                .padding(end = 8.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
@@ -999,9 +1131,10 @@ fun BlockEditorItem(
                 BlockType.TODO_LIST_ITEM -> {
                     val isChecked = block.properties["checked"] == "true"
                     Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .padding(end = 6.dp),
+                        modifier =
+                            Modifier
+                                .size(20.dp)
+                                .padding(end = 6.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Checkbox(
@@ -1437,10 +1570,11 @@ fun NoteGridCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val thumbnailEmoji = remember(note.id) {
-                    val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-                    prefs.getString("thumbnail_note_${note.id}", null)
-                }
+                val thumbnailEmoji =
+                    remember(note.id) {
+                        val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                        prefs.getString("thumbnail_note_${note.id}", null)
+                    }
                 Surface(
                     color = tagBg,
                     shape = RoundedCornerShape(8.dp),
@@ -1455,15 +1589,17 @@ fun NoteGridCard(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    val isPinned = remember(note.id) {
-                        val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-                        val pinnedSet = prefs.getStringSet("pinned_notes", emptySet()) ?: emptySet()
-                        pinnedSet.contains(note.id)
-                    }
-                    val isLocked = remember(note.id) {
-                        val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-                        prefs.getBoolean("locked_note_${note.id}", false)
-                    }
+                    val isPinned =
+                        remember(note.id) {
+                            val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                            val pinnedSet = prefs.getStringSet("pinned_notes", emptySet()) ?: emptySet()
+                            pinnedSet.contains(note.id)
+                        }
+                    val isLocked =
+                        remember(note.id) {
+                            val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                            prefs.getBoolean("locked_note_${note.id}", false)
+                        }
                     if (isPinned) {
                         Icon(
                             imageVector = Icons.Default.PushPin,
@@ -1557,6 +1693,331 @@ fun NoteGridCard(
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
             )
+        }
+    }
+}
+
+@Composable
+fun AttachmentsSection(
+    noteId: String,
+    selectedFontFamily: FontFamily,
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var attachments by remember(noteId) {
+        mutableStateOf(com.scryme.notes.domain.model.AttachmentHelper.getAttachmentsForNote(context, noteId))
+    }
+    var showAddDialog by remember { mutableStateOf(false) }
+
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.AttachFile,
+                    contentDescription = "Attachments Icon",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Attachments (${attachments.size})",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                    fontFamily = selectedFontFamily,
+                )
+            }
+
+            TextButton(
+                onClick = { showAddDialog = true },
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Add", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, fontFamily = selectedFontFamily)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (attachments.isEmpty()) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(8.dp),
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(8.dp),
+                        )
+                        .padding(vertical = 20.dp, horizontal = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "No attachments yet. Tap Add to attach files or links.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    fontFamily = selectedFontFamily,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        } else {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                attachments.forEach { attachment ->
+                    AttachmentCardItem(
+                        attachment = attachment,
+                        selectedFontFamily = selectedFontFamily,
+                        onOpen = {
+                            android.widget.Toast.makeText(
+                                context,
+                                "Opening attachment: ${attachment.name}",
+                                android.widget.Toast.LENGTH_SHORT,
+                            ).show()
+                        },
+                        onDelete = {
+                            com.scryme.notes.domain.model.AttachmentHelper.removeAttachmentFromNote(
+                                context,
+                                noteId,
+                                attachment.id,
+                            )
+                            attachments = com.scryme.notes.domain.model.AttachmentHelper.getAttachmentsForNote(context, noteId)
+                        },
+                    )
+                }
+            }
+        }
+    }
+
+    if (showAddDialog) {
+        var attachName by remember { mutableStateOf("") }
+        var attachUri by remember { mutableStateOf("") }
+        var selectedType by remember { mutableStateOf("PDF") }
+        val types = listOf("PDF", "Image", "Doc", "Audio", "Link")
+
+        AlertDialog(
+            onDismissRequest = { showAddDialog = false },
+            title = { Text("Add Attachment", fontFamily = selectedFontFamily, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Select Attachment Type:", fontSize = 13.sp, fontFamily = selectedFontFamily)
+
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        types.forEach { type ->
+                            val isTypeSelected = selectedType == type
+                            FilterChip(
+                                selected = isTypeSelected,
+                                onClick = { selectedType = type },
+                                label = { Text(type, fontSize = 12.sp, fontFamily = selectedFontFamily) },
+                            )
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = attachName,
+                        onValueChange = { attachName = it },
+                        label = { Text("Attachment Name", fontFamily = selectedFontFamily) },
+                        placeholder = { Text("e.g. Project Proposal", fontFamily = selectedFontFamily) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+
+                    OutlinedTextField(
+                        value = attachUri,
+                        onValueChange = { attachUri = it },
+                        label = { Text(if (selectedType == "Link") "URL Link" else "File Path/URI", fontFamily = selectedFontFamily) },
+                        placeholder = {
+                            Text(
+                                if (selectedType == "Link") "https://example.com" else "e.g. /documents/file.pdf",
+                                fontFamily = selectedFontFamily,
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (attachName.isNotBlank()) {
+                            val finalUri = if (attachUri.isBlank()) "simulated://$selectedType/${attachName.hashCode()}" else attachUri
+                            val size =
+                                when (selectedType) {
+                                    "PDF" -> "2.4 MB"
+                                    "Image" -> "1.1 MB"
+                                    "Doc" -> "412 KB"
+                                    "Audio" -> "4.8 MB"
+                                    else -> "Link"
+                                }
+                            val mime =
+                                when (selectedType) {
+                                    "PDF" -> "application/pdf"
+                                    "Image" -> "image/png"
+                                    "Doc" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                    "Audio" -> "audio/mpeg"
+                                    else -> "text/html"
+                                }
+                            val newAttachment =
+                                com.scryme.notes.domain.model.NoteAttachment(
+                                    id = java.util.UUID.randomUUID().toString(),
+                                    name = attachName,
+                                    uri = finalUri,
+                                    size = size,
+                                    mimeType = mime,
+                                    addedAt = System.currentTimeMillis(),
+                                )
+                            com.scryme.notes.domain.model.AttachmentHelper.addAttachmentToNote(
+                                context,
+                                noteId,
+                                newAttachment,
+                            )
+                            attachments = com.scryme.notes.domain.model.AttachmentHelper.getAttachmentsForNote(context, noteId)
+                            showAddDialog = false
+                        }
+                    },
+                ) {
+                    Text("Add", fontFamily = selectedFontFamily, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddDialog = false }) {
+                    Text("Cancel", fontFamily = selectedFontFamily)
+                }
+            },
+        )
+    }
+}
+
+@Composable
+fun AttachmentCardItem(
+    attachment: com.scryme.notes.domain.model.NoteAttachment,
+    selectedFontFamily: FontFamily,
+    onOpen: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val icon =
+        when {
+            attachment.mimeType.contains("pdf", ignoreCase = true) -> Icons.Default.PictureAsPdf
+            attachment.mimeType.contains("image", ignoreCase = true) -> Icons.Default.Image
+            attachment.mimeType.contains("audio", ignoreCase = true) -> Icons.Default.Mic
+            attachment.mimeType.contains("html", ignoreCase = true) || attachment.uri.startsWith("http") -> Icons.Default.Link
+            else -> Icons.Default.Description
+        }
+
+    val iconColor =
+        when {
+            attachment.mimeType.contains("pdf", ignoreCase = true) -> Color(0xFFD11A2A)
+            attachment.mimeType.contains("image", ignoreCase = true) -> Color(0xFF1B63C2)
+            attachment.mimeType.contains("audio", ignoreCase = true) -> Color(0xFF7C4DFF)
+            attachment.mimeType.contains("html", ignoreCase = true) || attachment.uri.startsWith("http") -> Color(0xFF00796B)
+            else -> Color(0xFF2E7D32)
+        }
+
+    Card(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { onOpen() },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)),
+        border =
+            androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+            ),
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Surface(
+                color = iconColor.copy(alpha = 0.12f),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.size(40.dp),
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = "File Type Icon",
+                        tint = iconColor,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = attachment.name,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontFamily = selectedFontFamily,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = attachment.size,
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        fontFamily = selectedFontFamily,
+                    )
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(3.dp)
+                                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), CircleShape),
+                    )
+                    Text(
+                        text = "Added " + getElapsedTimeString(attachment.addedAt),
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        fontFamily = selectedFontFamily,
+                    )
+                }
+            }
+
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier.size(32.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete Attachment",
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                    modifier = Modifier.size(16.dp),
+                )
+            }
         }
     }
 }
