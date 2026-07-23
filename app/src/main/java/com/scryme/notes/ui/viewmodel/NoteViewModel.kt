@@ -229,7 +229,7 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
         saveNoteDynamically(updated)
     }
 
-    fun insertBlockAfter(currentBlockId: String, type: BlockType = BlockType.PARAGRAPH) {
+    fun insertBlockAfter(currentBlockId: String, type: BlockType = BlockType.PARAGRAPH, initialText: String = "") {
         val current = _activeNote.value ?: return
         val index = current.blocks.indexOfFirst { it.id == currentBlockId }
         if (index == -1) return
@@ -237,7 +237,7 @@ class NoteViewModel(private val repository: NoteRepository) : ViewModel() {
         val newBlock = Block(
             id = UUID.randomUUID().toString(),
             type = type,
-            text = ""
+            text = initialText
         )
 
         val updatedList = current.blocks.toMutableList()

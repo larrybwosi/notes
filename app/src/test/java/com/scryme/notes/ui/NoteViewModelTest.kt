@@ -120,6 +120,27 @@ class NoteViewModelTest {
         }
 
     @Test
+    fun testBlockInsertion_WithInitialText() =
+        runTest {
+            // Arrange
+            viewModel.createRootNote("Root")
+            testDispatcher.scheduler.advanceUntilIdle()
+            val note = viewModel.activeNote.value!!
+            val originalBlockId = note.blocks[0].id
+
+            // Act: Insert paragraph block with some initial text
+            viewModel.insertBlockAfter(originalBlockId, BlockType.PARAGRAPH, "Hello new block")
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // Assert
+            val active = viewModel.activeNote.value
+            assertNotNull(active)
+            assertEquals(2, active!!.blocks.size)
+            assertEquals("Hello new block", active.blocks[1].text)
+            assertEquals(BlockType.PARAGRAPH, active.blocks[1].type)
+        }
+
+    @Test
     fun testBlockDeletion_DoesNotRemoveLastBlockButResetsText() =
         runTest {
             // Arrange

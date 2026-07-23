@@ -63,7 +63,7 @@ jobs:
           git tag "$TAG_NAME"
           git push origin "$TAG_NAME"
 
-      - name: Build Unsigned Release APK
+      - name: Build Release APK
         run: ./gradlew assembleRelease
 
       - name: Create GitHub Release
@@ -72,6 +72,6 @@ jobs:
         run: |
           TAG_NAME="${{ steps.versioning.outputs.tag }}"
           gh release create "$TAG_NAME" \
-            app/build/outputs/apk/release/app-release-unsigned.apk \
+            app/build/outputs/apk/release/app-release.apk \
             --title "Release $TAG_NAME" \
             --notes "Automated release of version $TAG_NAME on push to main."
