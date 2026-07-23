@@ -19,6 +19,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.scryme.notes.ui.DatabaseProvider
 import com.scryme.notes.ui.screens.NoteEditorScreen
@@ -49,7 +51,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreenLayout(viewModel: NoteViewModel) {
-    var sidebarVisible by remember { mutableStateOf(true) }
+    var sidebarVisible by remember { mutableStateOf(false) }
+    val activeNote by viewModel.activeNote.collectAsState()
 
     Row(modifier = Modifier.fillMaxSize()) {
         // Collapsible Sidebar (Workspace Screen)
@@ -68,7 +71,7 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
                 WorkspaceScreen(
                     viewModel = viewModel,
                     onNoteSelected = {
-                        // Optionally close sidebar on narrow screens when note selected
+                        sidebarVisible = false
                     }
                 )
             }
@@ -105,6 +108,18 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = activeNote?.title?.let { if (it.isBlank()) "Untitled" else it } ?: "Scryme Notes",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
             HorizontalDivider(
@@ -115,6 +130,7 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
             // Editor Screen View
             NoteEditorScreen(
                 viewModel = viewModel,
+                onOpenSidebar = { sidebarVisible = true },
                 modifier = Modifier.weight(1f)
             )
         }
