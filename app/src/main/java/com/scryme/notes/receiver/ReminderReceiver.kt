@@ -121,33 +121,39 @@ class ReminderReceiver : BroadcastReceiver() {
 }
 
 object ReminderScheduler {
-    fun scheduleDailyReminder(context: Context, timeStr: String) {
+    fun scheduleDailyReminder(
+        context: Context,
+        timeStr: String,
+    ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-        val intent = Intent(context, ReminderReceiver::class.java).apply {
-            action = "DAILY_REMINDER"
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            999,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val intent =
+            Intent(context, ReminderReceiver::class.java).apply {
+                action = "DAILY_REMINDER"
+            }
+        val pendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                999,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
 
         val timeParts = timeStr.split(":")
         if (timeParts.size != 2) return
         val hour = timeParts[0].toIntOrNull() ?: 9
         val minute = timeParts[1].toIntOrNull() ?: 0
 
-        val calendar = java.util.Calendar.getInstance().apply {
-            timeInMillis = System.currentTimeMillis()
-            set(java.util.Calendar.HOUR_OF_DAY, hour)
-            set(java.util.Calendar.MINUTE, minute)
-            set(java.util.Calendar.SECOND, 0)
-            set(java.util.Calendar.MILLISECOND, 0)
-            if (timeInMillis <= System.currentTimeMillis()) {
-                add(java.util.Calendar.DAY_OF_YEAR, 1)
+        val calendar =
+            java.util.Calendar.getInstance().apply {
+                timeInMillis = System.currentTimeMillis()
+                set(java.util.Calendar.HOUR_OF_DAY, hour)
+                set(java.util.Calendar.MINUTE, minute)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+                if (timeInMillis <= System.currentTimeMillis()) {
+                    add(java.util.Calendar.DAY_OF_YEAR, 1)
+                }
             }
-        }
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -155,59 +161,68 @@ object ReminderScheduler {
                     alarmManager.setExactAndAllowWhileIdle(
                         AlarmManager.RTC_WAKEUP,
                         calendar.timeInMillis,
-                        pendingIntent
+                        pendingIntent,
                     )
                 } else {
                     alarmManager.setAndAllowWhileIdle(
                         AlarmManager.RTC_WAKEUP,
                         calendar.timeInMillis,
-                        pendingIntent
+                        pendingIntent,
                     )
                 }
             } else {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     calendar.timeInMillis,
-                    pendingIntent
+                    pendingIntent,
                 )
             }
         } catch (e: Exception) {
             alarmManager.setAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
                 calendar.timeInMillis,
-                pendingIntent
+                pendingIntent,
             )
         }
     }
 
     fun cancelDailyReminder(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-        val intent = Intent(context, ReminderReceiver::class.java).apply {
-            action = "DAILY_REMINDER"
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            999,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val intent =
+            Intent(context, ReminderReceiver::class.java).apply {
+                action = "DAILY_REMINDER"
+            }
+        val pendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                999,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
         alarmManager.cancel(pendingIntent)
     }
 
-    fun scheduleNoteReminder(context: Context, noteId: String, noteTitle: String, timestamp: Long) {
+    fun scheduleNoteReminder(
+        context: Context,
+        noteId: String,
+        noteTitle: String,
+        timestamp: Long,
+    ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-        val intent = Intent(context, ReminderReceiver::class.java).apply {
-            action = "NOTE_REMINDER"
-            putExtra("NOTE_ID", noteId)
-            putExtra("NOTE_TITLE", noteTitle)
-        }
+        val intent =
+            Intent(context, ReminderReceiver::class.java).apply {
+                action = "NOTE_REMINDER"
+                putExtra("NOTE_ID", noteId)
+                putExtra("NOTE_TITLE", noteTitle)
+            }
         val requestCode = noteId.hashCode()
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            requestCode,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val pendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                requestCode,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -215,43 +230,48 @@ object ReminderScheduler {
                     alarmManager.setExactAndAllowWhileIdle(
                         AlarmManager.RTC_WAKEUP,
                         timestamp,
-                        pendingIntent
+                        pendingIntent,
                     )
                 } else {
                     alarmManager.setAndAllowWhileIdle(
                         AlarmManager.RTC_WAKEUP,
                         timestamp,
-                        pendingIntent
+                        pendingIntent,
                     )
                 }
             } else {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     timestamp,
-                    pendingIntent
+                    pendingIntent,
                 )
             }
         } catch (e: Exception) {
             alarmManager.setAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
                 timestamp,
-                pendingIntent
+                pendingIntent,
             )
         }
     }
 
-    fun cancelNoteReminder(context: Context, noteId: String) {
+    fun cancelNoteReminder(
+        context: Context,
+        noteId: String,
+    ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-        val intent = Intent(context, ReminderReceiver::class.java).apply {
-            action = "NOTE_REMINDER"
-        }
+        val intent =
+            Intent(context, ReminderReceiver::class.java).apply {
+                action = "NOTE_REMINDER"
+            }
         val requestCode = noteId.hashCode()
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            requestCode,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val pendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                requestCode,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
         alarmManager.cancel(pendingIntent)
     }
 

@@ -539,48 +539,50 @@ class NoteViewModel(
                     val otherTypeSpans = block.inlineStyles.filter { it.styleType != styleType }
 
                     // Check if [sStart, sEnd) is fully covered by sameTypeSpans
-                    val isFullyCovered = (sStart until sEnd).all { idx ->
-                        sameTypeSpans.any { span -> idx >= span.start && idx < span.end }
-                    }
+                    val isFullyCovered =
+                        (sStart until sEnd).all { idx ->
+                            sameTypeSpans.any { span -> idx >= span.start && idx < span.end }
+                        }
 
-                    val newSameTypeSpans = if (isFullyCovered) {
-                        // Remove styleType from [sStart, sEnd)
-                        val result = mutableListOf<InlineStyleSpan>()
-                        for (span in sameTypeSpans) {
-                            if (span.end <= sStart || span.start >= sEnd) {
-                                // No overlap
-                                result.add(span)
-                            } else {
-                                // Overlap
-                                if (span.start < sStart) {
-                                    result.add(InlineStyleSpan(styleType, span.start, sStart))
-                                }
-                                if (span.end > sEnd) {
-                                    result.add(InlineStyleSpan(styleType, sEnd, span.end))
-                                }
-                            }
-                        }
-                        result
-                    } else {
-                        // Apply styleType to [sStart, sEnd) by adding and merging
-                        val merged = (sameTypeSpans + InlineStyleSpan(styleType, sStart, sEnd)).sortedBy { it.start }
-                        val result = mutableListOf<InlineStyleSpan>()
-                        if (merged.isNotEmpty()) {
-                            var currentSpan = merged[0]
-                            for (i in 1 until merged.size) {
-                                val nextSpan = merged[i]
-                                if (currentSpan.end >= nextSpan.start) {
-                                    // Overlap or adjacent, merge them
-                                    currentSpan = InlineStyleSpan(styleType, currentSpan.start, maxOf(currentSpan.end, nextSpan.end))
+                    val newSameTypeSpans =
+                        if (isFullyCovered) {
+                            // Remove styleType from [sStart, sEnd)
+                            val result = mutableListOf<InlineStyleSpan>()
+                            for (span in sameTypeSpans) {
+                                if (span.end <= sStart || span.start >= sEnd) {
+                                    // No overlap
+                                    result.add(span)
                                 } else {
-                                    result.add(currentSpan)
-                                    currentSpan = nextSpan
+                                    // Overlap
+                                    if (span.start < sStart) {
+                                        result.add(InlineStyleSpan(styleType, span.start, sStart))
+                                    }
+                                    if (span.end > sEnd) {
+                                        result.add(InlineStyleSpan(styleType, sEnd, span.end))
+                                    }
                                 }
                             }
-                            result.add(currentSpan)
+                            result
+                        } else {
+                            // Apply styleType to [sStart, sEnd) by adding and merging
+                            val merged = (sameTypeSpans + InlineStyleSpan(styleType, sStart, sEnd)).sortedBy { it.start }
+                            val result = mutableListOf<InlineStyleSpan>()
+                            if (merged.isNotEmpty()) {
+                                var currentSpan = merged[0]
+                                for (i in 1 until merged.size) {
+                                    val nextSpan = merged[i]
+                                    if (currentSpan.end >= nextSpan.start) {
+                                        // Overlap or adjacent, merge them
+                                        currentSpan = InlineStyleSpan(styleType, currentSpan.start, maxOf(currentSpan.end, nextSpan.end))
+                                    } else {
+                                        result.add(currentSpan)
+                                        currentSpan = nextSpan
+                                    }
+                                }
+                                result.add(currentSpan)
+                            }
+                            result
                         }
-                        result
-                    }
 
                     block.copy(inlineStyles = otherTypeSpans + newSameTypeSpans)
                 } else {
