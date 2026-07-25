@@ -113,58 +113,12 @@ class NoteViewModel(
 
     private fun scheduleDailyReminder() {
         val context = context ?: return
-        val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as? android.app.AlarmManager ?: return
-        val intent =
-            android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
-                action = "DAILY_REMINDER"
-            }
-        val pendingIntent =
-            android.app.PendingIntent.getBroadcast(
-                context,
-                999,
-                intent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE,
-            )
-
-        val timeParts = _dailyReminderTime.value.split(":")
-        if (timeParts.size != 2) return
-        val hour = timeParts[0].toIntOrNull() ?: 9
-        val minute = timeParts[1].toIntOrNull() ?: 0
-
-        val calendar =
-            java.util.Calendar.getInstance().apply {
-                timeInMillis = System.currentTimeMillis()
-                set(java.util.Calendar.HOUR_OF_DAY, hour)
-                set(java.util.Calendar.MINUTE, minute)
-                set(java.util.Calendar.SECOND, 0)
-                set(java.util.Calendar.MILLISECOND, 0)
-                if (timeInMillis <= System.currentTimeMillis()) {
-                    add(java.util.Calendar.DAY_OF_YEAR, 1)
-                }
-            }
-
-        alarmManager.setAndAllowWhileIdle(
-            android.app.AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
-            pendingIntent,
-        )
+        com.scryme.notes.receiver.ReminderScheduler.scheduleDailyReminder(context, _dailyReminderTime.value)
     }
 
     private fun cancelDailyReminder() {
         val context = context ?: return
-        val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as? android.app.AlarmManager ?: return
-        val intent =
-            android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
-                action = "DAILY_REMINDER"
-            }
-        val pendingIntent =
-            android.app.PendingIntent.getBroadcast(
-                context,
-                999,
-                intent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE,
-            )
-        alarmManager.cancel(pendingIntent)
+        com.scryme.notes.receiver.ReminderScheduler.cancelDailyReminder(context)
     }
 
     fun setNoteReminder(
@@ -173,47 +127,20 @@ class NoteViewModel(
         timestamp: Long,
     ) {
         val context = context ?: return
-        val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as? android.app.AlarmManager ?: return
-        val intent =
-            android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
-                action = "NOTE_REMINDER"
-                putExtra("NOTE_ID", noteId)
-                putExtra("NOTE_TITLE", noteTitle)
-            }
-        val requestCode = noteId.hashCode()
-        val pendingIntent =
-            android.app.PendingIntent.getBroadcast(
-                context,
-                requestCode,
-                intent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE,
-            )
-
-        alarmManager.setAndAllowWhileIdle(
-            android.app.AlarmManager.RTC_WAKEUP,
-            timestamp,
-            pendingIntent,
-        )
-        prefs?.edit()?.putLong("reminder_note_$noteId", timestamp)?.apply()
+        com.scryme.notes.receiver.ReminderScheduler.scheduleNoteReminder(context, noteId, noteTitle, timestamp)
+        prefs?.edit()?.apply {
+            putLong("reminder_note_$noteId", timestamp)
+            putString("reminder_title_note_$noteId", noteTitle)
+        }?.apply()
     }
 
     fun cancelNoteReminder(noteId: String) {
         val context = context ?: return
-        val alarmManager = context.getSystemService(android.content.Context.ALARM_SERVICE) as? android.app.AlarmManager ?: return
-        val intent =
-            android.content.Intent(context, com.scryme.notes.receiver.ReminderReceiver::class.java).apply {
-                action = "NOTE_REMINDER"
-            }
-        val requestCode = noteId.hashCode()
-        val pendingIntent =
-            android.app.PendingIntent.getBroadcast(
-                context,
-                requestCode,
-                intent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE,
-            )
-        alarmManager.cancel(pendingIntent)
-        prefs?.edit()?.remove("reminder_note_$noteId")?.apply()
+        com.scryme.notes.receiver.ReminderScheduler.cancelNoteReminder(context, noteId)
+        prefs?.edit()?.apply {
+            remove("reminder_note_$noteId")
+            remove("reminder_title_note_$noteId")
+        }?.apply()
     }
 
     fun getNoteReminder(noteId: String): Long {
@@ -603,21 +530,59 @@ class NoteViewModel(
         val updatedBlocks =
             current.blocks.map { block ->
                 if (block.id == blockId) {
-                    val styles = block.inlineStyles.toMutableList()
+                    val textLength = block.text.length
+                    val sStart = start.coerceIn(0, textLength)
+                    val sEnd = end.coerceIn(0, textLength)
+                    if (sStart >= sEnd) return@map block
 
-                    // If exact style exists for this selection range, toggle it off
-                    val existingIndex =
-                        styles.indexOfFirst {
-                            it.styleType == styleType && it.start == start && it.end == end
-                        }
-                    if (existingIndex != -1) {
-                        styles.removeAt(existingIndex)
-                    } else {
-                        // Otherwise apply style. We can clean up overlapping styles for simplicity
-                        styles.add(InlineStyleSpan(styleType, start, end))
+                    val sameTypeSpans = block.inlineStyles.filter { it.styleType == styleType }.toMutableList()
+                    val otherTypeSpans = block.inlineStyles.filter { it.styleType != styleType }
+
+                    // Check if [sStart, sEnd) is fully covered by sameTypeSpans
+                    val isFullyCovered = (sStart until sEnd).all { idx ->
+                        sameTypeSpans.any { span -> idx >= span.start && idx < span.end }
                     }
 
-                    block.copy(inlineStyles = styles)
+                    val newSameTypeSpans = if (isFullyCovered) {
+                        // Remove styleType from [sStart, sEnd)
+                        val result = mutableListOf<InlineStyleSpan>()
+                        for (span in sameTypeSpans) {
+                            if (span.end <= sStart || span.start >= sEnd) {
+                                // No overlap
+                                result.add(span)
+                            } else {
+                                // Overlap
+                                if (span.start < sStart) {
+                                    result.add(InlineStyleSpan(styleType, span.start, sStart))
+                                }
+                                if (span.end > sEnd) {
+                                    result.add(InlineStyleSpan(styleType, sEnd, span.end))
+                                }
+                            }
+                        }
+                        result
+                    } else {
+                        // Apply styleType to [sStart, sEnd) by adding and merging
+                        val merged = (sameTypeSpans + InlineStyleSpan(styleType, sStart, sEnd)).sortedBy { it.start }
+                        val result = mutableListOf<InlineStyleSpan>()
+                        if (merged.isNotEmpty()) {
+                            var currentSpan = merged[0]
+                            for (i in 1 until merged.size) {
+                                val nextSpan = merged[i]
+                                if (currentSpan.end >= nextSpan.start) {
+                                    // Overlap or adjacent, merge them
+                                    currentSpan = InlineStyleSpan(styleType, currentSpan.start, maxOf(currentSpan.end, nextSpan.end))
+                                } else {
+                                    result.add(currentSpan)
+                                    currentSpan = nextSpan
+                                }
+                            }
+                            result.add(currentSpan)
+                        }
+                        result
+                    }
+
+                    block.copy(inlineStyles = otherTypeSpans + newSameTypeSpans)
                 } else {
                     block
                 }
