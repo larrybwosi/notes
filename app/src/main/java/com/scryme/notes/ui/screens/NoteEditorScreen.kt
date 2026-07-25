@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
@@ -43,6 +44,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -672,15 +674,7 @@ fun NoteEditorScreen(
                             }
                         },
                         onBackspaceOnEmpty = {
-                            val isListType =
-                                block.type == BlockType.BULLETED_LIST_ITEM ||
-                                    block.type == BlockType.NUMBERED_LIST_ITEM ||
-                                    block.type == BlockType.TODO_LIST_ITEM
-                            if (isListType) {
-                                viewModel.changeBlockType(block.id, BlockType.PARAGRAPH)
-                            } else {
-                                viewModel.deleteBlock(block.id)
-                            }
+                            viewModel.deleteBlock(block.id)
                         },
                         onToggleTodo = {
                             viewModel.toggleTodoBlockChecked(block.id)
@@ -1263,6 +1257,7 @@ fun BlockEditorItem(
                 },
                 textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 modifier =
                     Modifier
                         .weight(1f)
