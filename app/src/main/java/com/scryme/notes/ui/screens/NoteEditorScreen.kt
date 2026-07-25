@@ -1,5 +1,14 @@
 package com.scryme.notes.ui.screens
 
+import android.net.Uri
+import android.provider.OpenableColumns
+import android.content.Context
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -1124,7 +1133,7 @@ fun BlockEditorItem(
                         "$sequenceNumber.",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(end = 10.dp, top = 0.dp),
+                        modifier = Modifier.padding(end = 10.dp, top = 2.dp),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
@@ -1287,7 +1296,7 @@ fun BlockEditorItem(
                         },
                 decorationBox = { innerTextField ->
                     Box(modifier = Modifier.fillMaxWidth()) {
-                        if (textFieldValue.text.isEmpty()) {
+                        if (isFocused && textFieldValue.text.isEmpty()) {
                             Text(
                                 text = getPlaceholderText(block.type),
                                 style = textStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)),
@@ -1783,11 +1792,21 @@ fun AttachmentsSection(
                         attachment = attachment,
                         selectedFontFamily = selectedFontFamily,
                         onOpen = {
-                            android.widget.Toast.makeText(
-                                context,
-                                "Opening attachment: ${attachment.name}",
-                                android.widget.Toast.LENGTH_SHORT,
-                            ).show()
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    data = Uri.parse(attachment.uri)
+                                    if (attachment.uri.startsWith("content://")) {
+                                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                    }
+                                }
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "Opening attachment: ${attachment.name}",
+                                    android.widget.Toast.LENGTH_SHORT,
+                                ).show()
+                            }
                         },
                         onDelete = {
                             com.scryme.notes.domain.model.AttachmentHelper.removeAttachmentFromNote(
@@ -1809,6 +1828,21 @@ fun AttachmentsSection(
         var selectedType by remember { mutableStateOf("PDF") }
         val types = listOf("PDF", "Image", "Doc", "Audio", "Link")
 
+        var pickedFileSize by remember { mutableStateOf<String?>(null) }
+        var pickedFileMimeType by remember { mutableStateOf<String?>(null) }
+
+        val filePickerLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent()
+        ) { uri: Uri? ->
+            if (uri != null) {
+                attachUri = uri.toString()
+                val (name, size) = getFileInfoFromUri(context, uri)
+                attachName = name
+                pickedFileSize = size
+                pickedFileMimeType = context.contentResolver.getType(uri) ?: "*/*"
+            }
+        }
+
         AlertDialog(
             onDismissRequest = { showAddDialog = false },
             title = { Text("Add Attachment", fontFamily = selectedFontFamily, fontWeight = FontWeight.Bold) },
@@ -1827,9 +1861,39 @@ fun AttachmentsSection(
                             val isTypeSelected = selectedType == type
                             FilterChip(
                                 selected = isTypeSelected,
-                                onClick = { selectedType = type },
+                                onClick = {
+                                    selectedType = type
+                                    attachName = ""
+                                    attachUri = ""
+                                    pickedFileSize = null
+                                    pickedFileMimeType = null
+                                },
                                 label = { Text(type, fontSize = 12.sp, fontFamily = selectedFontFamily) },
                             )
+                        }
+                    }
+
+                    if (selectedType != "Link") {
+                        Button(
+                            onClick = {
+                                val mimeLimit = when (selectedType) {
+                                    "PDF" -> "application/pdf"
+                                    "Image" -> "image/*"
+                                    "Doc" -> "*/*"
+                                    "Audio" -> "audio/*"
+                                    else -> "*/*"
+                                }
+                                filePickerLauncher.launch(mimeLimit)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        ) {
+                            Icon(Icons.Default.AttachFile, contentDescription = "Choose File")
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Choose File from Device", fontFamily = selectedFontFamily)
                         }
                     }
 
@@ -1848,7 +1912,7 @@ fun AttachmentsSection(
                         label = { Text(if (selectedType == "Link") "URL Link" else "File Path/URI", fontFamily = selectedFontFamily) },
                         placeholder = {
                             Text(
-                                if (selectedType == "Link") "https://example.com" else "e.g. /documents/file.pdf",
+                                if (selectedType == "Link") "https://example.com" else "e.g. content://media/...",
                                 fontFamily = selectedFontFamily,
                             )
                         },
@@ -1862,22 +1926,20 @@ fun AttachmentsSection(
                     onClick = {
                         if (attachName.isNotBlank()) {
                             val finalUri = if (attachUri.isBlank()) "simulated://$selectedType/${attachName.hashCode()}" else attachUri
-                            val size =
-                                when (selectedType) {
-                                    "PDF" -> "2.4 MB"
-                                    "Image" -> "1.1 MB"
-                                    "Doc" -> "412 KB"
-                                    "Audio" -> "4.8 MB"
-                                    else -> "Link"
-                                }
-                            val mime =
-                                when (selectedType) {
-                                    "PDF" -> "application/pdf"
-                                    "Image" -> "image/png"
-                                    "Doc" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                                    "Audio" -> "audio/mpeg"
-                                    else -> "text/html"
-                                }
+                            val size = pickedFileSize ?: when (selectedType) {
+                                "PDF" -> "2.4 MB"
+                                "Image" -> "1.1 MB"
+                                "Doc" -> "412 KB"
+                                "Audio" -> "4.8 MB"
+                                else -> "Link"
+                            }
+                            val mime = pickedFileMimeType ?: when (selectedType) {
+                                "PDF" -> "application/pdf"
+                                "Image" -> "image/png"
+                                "Doc" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                "Audio" -> "audio/mpeg"
+                                else -> "text/html"
+                            }
                             val newAttachment =
                                 com.scryme.notes.domain.model.NoteAttachment(
                                     id = java.util.UUID.randomUUID().toString(),
@@ -1960,12 +2022,18 @@ fun AttachmentCardItem(
                 modifier = Modifier.size(40.dp),
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = "File Type Icon",
-                        tint = iconColor,
-                        modifier = Modifier.size(20.dp),
-                    )
+                    if (attachment.mimeType.contains("image", ignoreCase = true) &&
+                        (attachment.uri.startsWith("content://") || attachment.uri.startsWith("file://"))
+                    ) {
+                        UriImagePreview(uriStr = attachment.uri, modifier = Modifier.size(40.dp))
+                    } else {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = "File Type Icon",
+                            tint = iconColor,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
                 }
             }
 
@@ -2033,5 +2101,76 @@ fun getElapsedTimeString(updatedAt: Long): String {
         minutes < 60 -> "${minutes}m ago"
         hours < 24 -> "${hours}h ago"
         else -> "${days}d ago"
+    }
+}
+
+fun getFileInfoFromUri(context: Context, uri: Uri): Pair<String, String> {
+    var name = "Unknown File"
+    var sizeStr = "Unknown size"
+    try {
+        val cursor = context.contentResolver.query(uri, null, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (nameIndex != -1) {
+                    name = it.getString(nameIndex) ?: name
+                }
+                val sizeIndex = it.getColumnIndex(OpenableColumns.SIZE)
+                if (sizeIndex != -1) {
+                    val sizeBytes = it.getLong(sizeIndex)
+                    sizeStr = formatFileSize(sizeBytes)
+                }
+            }
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+    return Pair(name, sizeStr)
+}
+
+fun formatFileSize(bytes: Long): String {
+    if (bytes <= 0) return "0 B"
+    val units = arrayOf("B", "KB", "MB", "GB", "TB")
+    val digitGroups = (Math.log10(bytes.toDouble()) / Math.log10(1024.toDouble())).toInt()
+    if (digitGroups < 0 || digitGroups >= units.size) return "$bytes B"
+    return String.format("%.1f %s", bytes / Math.pow(1024.0, digitGroups.toDouble()), units[digitGroups])
+}
+
+@Composable
+fun UriImagePreview(uriStr: String, modifier: Modifier = Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val bitmap = remember(uriStr) {
+        try {
+            val uri = Uri.parse(uriStr)
+            val source = android.graphics.ImageDecoder.createSource(context.contentResolver, uri)
+            android.graphics.ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+            }
+        } catch (e: Exception) {
+            try {
+                val uri = Uri.parse(uriStr)
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    android.graphics.BitmapFactory.decodeStream(inputStream)
+                }
+            } catch (e2: Exception) {
+                null
+            }
+        }
+    }
+
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = "Image Preview",
+            modifier = modifier,
+            contentScale = ContentScale.Crop
+        )
+    } else {
+        Icon(
+            imageVector = Icons.Default.Image,
+            contentDescription = "Image Preview Fail",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+            modifier = modifier.padding(8.dp)
+        )
     }
 }
