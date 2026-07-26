@@ -11,9 +11,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuOpen
 import androidx.compose.material.icons.filled.*
@@ -523,25 +523,27 @@ fun BottomSheetContent(
                             Text("No reminders set for this note.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         } else {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(max = 120.dp)
-                                    .verticalScroll(rememberScrollState()),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(max = 120.dp)
+                                        .verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 remindersList.forEach { reminder ->
                                     Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                                                .padding(horizontal = 8.dp, vertical = 6.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
+                                        verticalAlignment = Alignment.CenterVertically,
                                     ) {
                                         Text(
                                             text = sdf.format(java.util.Date(reminder.timestamp)),
                                             fontSize = 13.sp,
-                                            fontWeight = FontWeight.Medium
+                                            fontWeight = FontWeight.Medium,
                                         )
                                         IconButton(
                                             onClick = {
@@ -549,13 +551,13 @@ fun BottomSheetContent(
                                                 remindersList = viewModel.getNoteReminders(note.id)
                                                 viewModel.loadAllNotes()
                                             },
-                                            modifier = Modifier.size(24.dp)
+                                            modifier = Modifier.size(24.dp),
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Delete,
                                                 contentDescription = "Delete Reminder",
                                                 tint = MaterialTheme.colorScheme.error,
-                                                modifier = Modifier.size(16.dp)
+                                                modifier = Modifier.size(16.dp),
                                             )
                                         }
                                     }
@@ -582,7 +584,7 @@ fun BottomSheetContent(
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 Button(
                                     onClick = {

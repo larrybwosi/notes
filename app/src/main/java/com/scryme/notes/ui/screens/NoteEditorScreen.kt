@@ -227,24 +227,27 @@ fun NoteEditorScreen(
 
             // Premium Start Daily Journal Entry Card
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { viewModel.createDailyJournalNote() },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.createDailyJournalNote() },
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)),
-                border = androidx.compose.foundation.BorderStroke(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
-                ),
+                border =
+                    androidx.compose.foundation.BorderStroke(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
+                    ),
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                        modifier =
+                            Modifier
+                                .size(40.dp)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(

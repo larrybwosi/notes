@@ -34,19 +34,23 @@ class NoteViewModelTest {
         mockDao = MockNoteDao()
         repository = NoteRepositoryImpl(mockDao)
         fakePrefs = FakeSharedPreferences()
-        val mockContext = object : android.content.ContextWrapper(null) {
-            override fun getSharedPreferences(name: String, mode: Int): android.content.SharedPreferences {
-                return fakePrefs
-            }
+        val mockContext =
+            object : android.content.ContextWrapper(null) {
+                override fun getSharedPreferences(
+                    name: String,
+                    mode: Int,
+                ): android.content.SharedPreferences {
+                    return fakePrefs
+                }
 
-            override fun getSystemService(name: String): Any? {
-                return null
-            }
+                override fun getSystemService(name: String): Any? {
+                    return null
+                }
 
-            override fun getPackageName(): String {
-                return "com.scryme.notes"
+                override fun getPackageName(): String {
+                    return "com.scryme.notes"
+                }
             }
-        }
         viewModel = NoteViewModel(repository, mockContext)
     }
 
@@ -314,23 +318,41 @@ class FakeSharedPreferences : android.content.SharedPreferences {
 
     override fun getAll(): Map<String, *> = map
 
-    override fun getString(key: String, defValue: String?): String? =
+    override fun getString(
+        key: String,
+        defValue: String?,
+    ): String? =
         (map[key] as? String) ?: defValue
 
     @Suppress("UNCHECKED_CAST")
-    override fun getStringSet(key: String, defValues: Set<String>?): Set<String>? =
+    override fun getStringSet(
+        key: String,
+        defValues: Set<String>?,
+    ): Set<String>? =
         (map[key] as? Set<String>) ?: defValues
 
-    override fun getInt(key: String, defValue: Int): Int =
+    override fun getInt(
+        key: String,
+        defValue: Int,
+    ): Int =
         (map[key] as? Int) ?: defValue
 
-    override fun getLong(key: String, defValue: Long): Long =
+    override fun getLong(
+        key: String,
+        defValue: Long,
+    ): Long =
         (map[key] as? Long) ?: defValue
 
-    override fun getFloat(key: String, defValue: Float): Float =
+    override fun getFloat(
+        key: String,
+        defValue: Float,
+    ): Float =
         (map[key] as? Float) ?: defValue
 
-    override fun getBoolean(key: String, defValue: Boolean): Boolean =
+    override fun getBoolean(
+        key: String,
+        defValue: Boolean,
+    ): Boolean =
         (map[key] as? Boolean) ?: defValue
 
     override fun contains(key: String): Boolean = map.containsKey(key)
@@ -345,37 +367,55 @@ class FakeSharedPreferences : android.content.SharedPreferences {
         private val tempMap = mutableMapOf<String, Any?>()
         private val removals = mutableSetOf<String>()
 
-        override fun putString(key: String, value: String?): android.content.SharedPreferences.Editor {
+        override fun putString(
+            key: String,
+            value: String?,
+        ): android.content.SharedPreferences.Editor {
             tempMap[key] = value
             removals.remove(key)
             return this
         }
 
-        override fun putStringSet(key: String, values: Set<String>?): android.content.SharedPreferences.Editor {
+        override fun putStringSet(
+            key: String,
+            values: Set<String>?,
+        ): android.content.SharedPreferences.Editor {
             tempMap[key] = values
             removals.remove(key)
             return this
         }
 
-        override fun putInt(key: String, value: Int): android.content.SharedPreferences.Editor {
+        override fun putInt(
+            key: String,
+            value: Int,
+        ): android.content.SharedPreferences.Editor {
             tempMap[key] = value
             removals.remove(key)
             return this
         }
 
-        override fun putLong(key: String, value: Long): android.content.SharedPreferences.Editor {
+        override fun putLong(
+            key: String,
+            value: Long,
+        ): android.content.SharedPreferences.Editor {
             tempMap[key] = value
             removals.remove(key)
             return this
         }
 
-        override fun putFloat(key: String, value: Float): android.content.SharedPreferences.Editor {
+        override fun putFloat(
+            key: String,
+            value: Float,
+        ): android.content.SharedPreferences.Editor {
             tempMap[key] = value
             removals.remove(key)
             return this
         }
 
-        override fun putBoolean(key: String, value: Boolean): android.content.SharedPreferences.Editor {
+        override fun putBoolean(
+            key: String,
+            value: Boolean,
+        ): android.content.SharedPreferences.Editor {
             tempMap[key] = value
             removals.remove(key)
             return this

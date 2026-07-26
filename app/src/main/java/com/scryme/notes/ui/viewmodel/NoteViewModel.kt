@@ -157,16 +157,21 @@ class NoteViewModel(
         }
     }
 
-    fun addNoteReminder(noteId: String, noteTitle: String, timestamp: Long) {
+    fun addNoteReminder(
+        noteId: String,
+        noteTitle: String,
+        timestamp: Long,
+    ) {
         val context = context ?: return
         val currentList = getNoteReminders(noteId).toMutableList()
         val reminderId = java.util.UUID.randomUUID().toString()
-        val newReminder = com.scryme.notes.domain.model.NoteReminder(
-            id = reminderId,
-            noteId = noteId,
-            noteTitle = noteTitle,
-            timestamp = timestamp
-        )
+        val newReminder =
+            com.scryme.notes.domain.model.NoteReminder(
+                id = reminderId,
+                noteId = noteId,
+                noteTitle = noteTitle,
+                timestamp = timestamp,
+            )
         currentList.add(newReminder)
 
         // Save back
@@ -177,7 +182,10 @@ class NoteViewModel(
         com.scryme.notes.receiver.ReminderScheduler.scheduleNoteReminder(context, noteId, noteTitle, timestamp, reminderId)
     }
 
-    fun removeNoteReminder(noteId: String, reminderId: String) {
+    fun removeNoteReminder(
+        noteId: String,
+        reminderId: String,
+    ) {
         val context = context ?: return
         val currentList = getNoteReminders(noteId).filter { it.id != reminderId }
 
@@ -205,52 +213,54 @@ class NoteViewModel(
             val dateStr = dateFormat.format(java.util.Date())
             val title = "Journal - $dateStr"
 
-            val blocks = listOf(
-                Block(
-                    id = UUID.randomUUID().toString(),
-                    type = BlockType.CALLOUT,
-                    text = "💡 Daily Reflection Template",
-                ),
-                Block(
-                    id = UUID.randomUUID().toString(),
-                    type = BlockType.HEADER_2,
-                    text = "What did I accomplish today?",
-                ),
-                Block(
-                    id = UUID.randomUUID().toString(),
-                    type = BlockType.BULLETED_LIST_ITEM,
-                    text = "",
-                ),
-                Block(
-                    id = UUID.randomUUID().toString(),
-                    type = BlockType.HEADER_2,
-                    text = "What am I grateful for?",
-                ),
-                Block(
-                    id = UUID.randomUUID().toString(),
-                    type = BlockType.BULLETED_LIST_ITEM,
-                    text = "",
-                ),
-                Block(
-                    id = UUID.randomUUID().toString(),
-                    type = BlockType.HEADER_2,
-                    text = "How can I improve tomorrow?",
-                ),
-                Block(
-                    id = UUID.randomUUID().toString(),
-                    type = BlockType.BULLETED_LIST_ITEM,
-                    text = "",
+            val blocks =
+                listOf(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.CALLOUT,
+                        text = "💡 Daily Reflection Template",
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.HEADER_2,
+                        text = "What did I accomplish today?",
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "",
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.HEADER_2,
+                        text = "What am I grateful for?",
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "",
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.HEADER_2,
+                        text = "How can I improve tomorrow?",
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "",
+                    ),
                 )
-            )
 
-            val newNote = Note(
-                id = newId,
-                title = title,
-                blocks = blocks,
-                parentId = null,
-                createdAt = System.currentTimeMillis(),
-                updatedAt = System.currentTimeMillis(),
-            )
+            val newNote =
+                Note(
+                    id = newId,
+                    title = title,
+                    blocks = blocks,
+                    parentId = null,
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis(),
+                )
 
             repository.saveNote(newNote)
 

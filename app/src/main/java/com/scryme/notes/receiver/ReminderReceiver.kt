@@ -306,7 +306,7 @@ object ReminderScheduler {
                                 noteId = reminder.noteId,
                                 noteTitle = reminder.noteTitle,
                                 timestamp = reminder.timestamp,
-                                reminderId = reminder.id
+                                reminderId = reminder.id,
                             )
                         }
                     }
