@@ -9,7 +9,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.scryme.notes.MainActivity
+import com.scryme.notes.domain.model.NoteReminder
 
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(
@@ -69,14 +72,15 @@ class ReminderReceiver : BroadcastReceiver() {
             "NOTE_REMINDER" -> {
                 val noteId = intent.getStringExtra("NOTE_ID") ?: ""
                 val noteTitle = intent.getStringExtra("NOTE_TITLE") ?: "Untitled Note"
+                val reminderId = intent.getStringExtra("REMINDER_ID") ?: noteId
 
                 val mainIntent =
                     Intent(context, MainActivity::class.java).apply {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                         putExtra("LAUNCH_NOTE_ID", noteId)
                     }
-                // Use a unique request code for note reminders based on noteId hash
-                val requestCode = noteId.hashCode()
+                // Use a unique request code for note reminders based on reminderId hash to support multiple reminders
+                val requestCode = reminderId.hashCode()
                 val pendingIntent =
                     PendingIntent.getActivity(
                         context,
@@ -207,6 +211,7 @@ object ReminderScheduler {
         noteId: String,
         noteTitle: String,
         timestamp: Long,
+        reminderId: String = noteId,
     ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
         val intent =
@@ -214,8 +219,9 @@ object ReminderScheduler {
                 action = "NOTE_REMINDER"
                 putExtra("NOTE_ID", noteId)
                 putExtra("NOTE_TITLE", noteTitle)
+                putExtra("REMINDER_ID", reminderId)
             }
-        val requestCode = noteId.hashCode()
+        val requestCode = reminderId.hashCode()
         val pendingIntent =
             PendingIntent.getBroadcast(
                 context,
@@ -257,14 +263,14 @@ object ReminderScheduler {
 
     fun cancelNoteReminder(
         context: Context,
-        noteId: String,
+        reminderId: String,
     ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
         val intent =
             Intent(context, ReminderReceiver::class.java).apply {
                 action = "NOTE_REMINDER"
             }
-        val requestCode = noteId.hashCode()
+        val requestCode = reminderId.hashCode()
         val pendingIntent =
             PendingIntent.getBroadcast(
                 context,
@@ -285,13 +291,35 @@ object ReminderScheduler {
 
         // Reschedule note reminders
         val allPrefs = prefs.all
+        val gson = Gson()
+        val reminderType = object : TypeToken<List<NoteReminder>>() {}.type
+
         for ((key, value) in allPrefs) {
-            if (key.startsWith("reminder_note_") && value is Long) {
+            // First support multiple reminders stored in lists
+            if (key.startsWith("note_reminders_list_") && value is String) {
+                try {
+                    val remindersList: List<NoteReminder> = gson.fromJson(value, reminderType)
+                    for (reminder in remindersList) {
+                        if (reminder.timestamp > System.currentTimeMillis()) {
+                            scheduleNoteReminder(
+                                context = context,
+                                noteId = reminder.noteId,
+                                noteTitle = reminder.noteTitle,
+                                timestamp = reminder.timestamp,
+                                reminderId = reminder.id,
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            } else if (key.startsWith("reminder_note_") && value is Long) {
+                // Backward compatibility for single reminder keys
                 val noteId = key.removePrefix("reminder_note_")
                 val timestamp = value
                 if (timestamp > System.currentTimeMillis()) {
                     val noteTitle = prefs.getString("reminder_title_note_$noteId", "Untitled Note") ?: "Untitled Note"
-                    scheduleNoteReminder(context, noteId, noteTitle, timestamp)
+                    scheduleNoteReminder(context, noteId, noteTitle, timestamp, noteId)
                 }
             }
         }

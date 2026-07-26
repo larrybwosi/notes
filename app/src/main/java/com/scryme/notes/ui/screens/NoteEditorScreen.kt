@@ -223,6 +223,64 @@ fun NoteEditorScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Premium Start Daily Journal Entry Card
+            Card(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.createDailyJournalNote() },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)),
+                border =
+                    androidx.compose.foundation.BorderStroke(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
+                    ),
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(40.dp)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Book,
+                            contentDescription = "Journal Icon",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Start Daily Journal",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontFamily = selectedFontFamily,
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Quickly log today's thoughts, accomplishments & improvements.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontFamily = selectedFontFamily,
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = "Go",
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             // Label Filters Row
@@ -1604,6 +1662,21 @@ fun NoteGridCard(
                             val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
                             prefs.getBoolean("locked_note_${note.id}", false)
                         }
+                    val activeRemindersCount = remember(note.id) { viewModel.getNoteReminders(note.id).size }
+                    if (activeRemindersCount > 0) {
+                        Icon(
+                            imageVector = Icons.Default.NotificationsActive,
+                            contentDescription = "Active Reminders",
+                            tint = Color(0xFFFF6D00),
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Text(
+                            text = activeRemindersCount.toString(),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFFF6D00),
+                        )
+                    }
                     if (isPinned) {
                         Icon(
                             imageVector = Icons.Default.PushPin,

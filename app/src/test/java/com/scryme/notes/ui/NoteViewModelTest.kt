@@ -26,12 +26,32 @@ class NoteViewModelTest {
     private lateinit var repository: NoteRepositoryImpl
     private lateinit var viewModel: NoteViewModel
 
+    private lateinit var fakePrefs: FakeSharedPreferences
+
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         mockDao = MockNoteDao()
         repository = NoteRepositoryImpl(mockDao)
-        viewModel = NoteViewModel(repository)
+        fakePrefs = FakeSharedPreferences()
+        val mockContext =
+            object : android.content.ContextWrapper(null) {
+                override fun getSharedPreferences(
+                    name: String,
+                    mode: Int,
+                ): android.content.SharedPreferences {
+                    return fakePrefs
+                }
+
+                override fun getSystemService(name: String): Any? {
+                    return null
+                }
+
+                override fun getPackageName(): String {
+                    return "com.scryme.notes"
+                }
+            }
+        viewModel = NoteViewModel(repository, mockContext)
     }
 
     @After
@@ -214,4 +234,215 @@ class NoteViewModelTest {
             assertTrue(viewModel.dailyReminderEnabled.value)
             assertEquals("08:30", viewModel.dailyReminderTime.value)
         }
+
+    @Test
+    fun testCreateDailyJournalNote_InitializesWithJournalLayoutAndLabel() =
+        runTest {
+            // Act
+            viewModel.createDailyJournalNote()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // Assert
+            val active = viewModel.activeNote.value
+            assertNotNull(active)
+            assertTrue(active!!.title.startsWith("Journal - "))
+            assertEquals(7, active.blocks.size)
+            assertEquals(BlockType.CALLOUT, active.blocks[0].type)
+            assertEquals("💡 Daily Reflection Template", active.blocks[0].text)
+            assertEquals(BlockType.HEADER_2, active.blocks[1].type)
+            assertEquals("What did I accomplish today?", active.blocks[1].text)
+            assertEquals(BlockType.BULLETED_LIST_ITEM, active.blocks[2].type)
+
+            // Verify label saved in prefs
+            val savedLabel = fakePrefs.getString("label_note_${active.id}", null)
+            assertEquals("Journal", savedLabel)
+        }
+
+    @Test
+    fun testMultipleReminders_CanAddGetAndRemoveReminders() =
+        runTest {
+            val noteId = "test_note_id"
+            val noteTitle = "Test Reminder Note"
+            val timestamp1 = System.currentTimeMillis() + 10_000L
+            val timestamp2 = System.currentTimeMillis() + 60_000L
+
+            // Act: Add two distinct reminders
+            viewModel.addNoteReminder(noteId, noteTitle, timestamp1)
+            viewModel.addNoteReminder(noteId, noteTitle, timestamp2)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // Assert both exist
+            val reminders = viewModel.getNoteReminders(noteId)
+            assertEquals(2, reminders.size)
+            assertEquals(noteId, reminders[0].noteId)
+            assertEquals(noteTitle, reminders[0].noteTitle)
+            assertEquals(timestamp1, reminders[0].timestamp)
+            assertEquals(timestamp2, reminders[1].timestamp)
+
+            // Act: Remove the first one
+            val firstId = reminders[0].id
+            viewModel.removeNoteReminder(noteId, firstId)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // Assert only the second one remains
+            val remainingReminders = viewModel.getNoteReminders(noteId)
+            assertEquals(1, remainingReminders.size)
+            assertEquals(timestamp2, remainingReminders[0].timestamp)
+        }
+
+    @Test
+    fun testNoteDeletion_ClearsAllAssociatedReminders() =
+        runTest {
+            // Arrange
+            viewModel.createRootNote("Page with Reminders")
+            testDispatcher.scheduler.advanceUntilIdle()
+            val noteId = viewModel.activeNote.value!!.id
+
+            viewModel.addNoteReminder(noteId, "Page with Reminders", System.currentTimeMillis() + 10_000L)
+            viewModel.addNoteReminder(noteId, "Page with Reminders", System.currentTimeMillis() + 20_000L)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(2, viewModel.getNoteReminders(noteId).size)
+
+            // Act: Delete Note
+            viewModel.deleteNote(noteId)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // Assert: Reminders list should be empty
+            assertEquals(0, viewModel.getNoteReminders(noteId).size)
+        }
+}
+
+class FakeSharedPreferences : android.content.SharedPreferences {
+    private val map = mutableMapOf<String, Any?>()
+
+    override fun getAll(): Map<String, *> = map
+
+    override fun getString(
+        key: String,
+        defValue: String?,
+    ): String? =
+        (map[key] as? String) ?: defValue
+
+    @Suppress("UNCHECKED_CAST")
+    override fun getStringSet(
+        key: String,
+        defValues: Set<String>?,
+    ): Set<String>? =
+        (map[key] as? Set<String>) ?: defValues
+
+    override fun getInt(
+        key: String,
+        defValue: Int,
+    ): Int =
+        (map[key] as? Int) ?: defValue
+
+    override fun getLong(
+        key: String,
+        defValue: Long,
+    ): Long =
+        (map[key] as? Long) ?: defValue
+
+    override fun getFloat(
+        key: String,
+        defValue: Float,
+    ): Float =
+        (map[key] as? Float) ?: defValue
+
+    override fun getBoolean(
+        key: String,
+        defValue: Boolean,
+    ): Boolean =
+        (map[key] as? Boolean) ?: defValue
+
+    override fun contains(key: String): Boolean = map.containsKey(key)
+
+    override fun edit(): android.content.SharedPreferences.Editor = FakeEditor(map)
+
+    override fun registerOnSharedPreferenceChangeListener(listener: android.content.SharedPreferences.OnSharedPreferenceChangeListener?) {}
+
+    override fun unregisterOnSharedPreferenceChangeListener(listener: android.content.SharedPreferences.OnSharedPreferenceChangeListener?) {}
+
+    class FakeEditor(private val map: MutableMap<String, Any?>) : android.content.SharedPreferences.Editor {
+        private val tempMap = mutableMapOf<String, Any?>()
+        private val removals = mutableSetOf<String>()
+
+        override fun putString(
+            key: String,
+            value: String?,
+        ): android.content.SharedPreferences.Editor {
+            tempMap[key] = value
+            removals.remove(key)
+            return this
+        }
+
+        override fun putStringSet(
+            key: String,
+            values: Set<String>?,
+        ): android.content.SharedPreferences.Editor {
+            tempMap[key] = values
+            removals.remove(key)
+            return this
+        }
+
+        override fun putInt(
+            key: String,
+            value: Int,
+        ): android.content.SharedPreferences.Editor {
+            tempMap[key] = value
+            removals.remove(key)
+            return this
+        }
+
+        override fun putLong(
+            key: String,
+            value: Long,
+        ): android.content.SharedPreferences.Editor {
+            tempMap[key] = value
+            removals.remove(key)
+            return this
+        }
+
+        override fun putFloat(
+            key: String,
+            value: Float,
+        ): android.content.SharedPreferences.Editor {
+            tempMap[key] = value
+            removals.remove(key)
+            return this
+        }
+
+        override fun putBoolean(
+            key: String,
+            value: Boolean,
+        ): android.content.SharedPreferences.Editor {
+            tempMap[key] = value
+            removals.remove(key)
+            return this
+        }
+
+        override fun remove(key: String): android.content.SharedPreferences.Editor {
+            removals.add(key)
+            tempMap.remove(key)
+            return this
+        }
+
+        override fun clear(): android.content.SharedPreferences.Editor {
+            tempMap.clear()
+            removals.addAll(map.keys)
+            return this
+        }
+
+        override fun commit(): Boolean {
+            apply()
+            return true
+        }
+
+        override fun apply() {
+            for (key in removals) {
+                map.remove(key)
+            }
+            map.putAll(tempMap)
+        }
+    }
 }

@@ -147,10 +147,137 @@ class NoteViewModel(
         return prefs?.getLong("reminder_note_$noteId", 0L) ?: 0L
     }
 
+    fun getNoteReminders(noteId: String): List<com.scryme.notes.domain.model.NoteReminder> {
+        val json = prefs?.getString("note_reminders_list_$noteId", null) ?: return emptyList()
+        return try {
+            val type = object : com.google.gson.reflect.TypeToken<List<com.scryme.notes.domain.model.NoteReminder>>() {}.type
+            com.google.gson.Gson().fromJson(json, type) ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    fun addNoteReminder(
+        noteId: String,
+        noteTitle: String,
+        timestamp: Long,
+    ) {
+        val context = context ?: return
+        val currentList = getNoteReminders(noteId).toMutableList()
+        val reminderId = java.util.UUID.randomUUID().toString()
+        val newReminder =
+            com.scryme.notes.domain.model.NoteReminder(
+                id = reminderId,
+                noteId = noteId,
+                noteTitle = noteTitle,
+                timestamp = timestamp,
+            )
+        currentList.add(newReminder)
+
+        // Save back
+        val json = com.google.gson.Gson().toJson(currentList)
+        prefs?.edit()?.putString("note_reminders_list_$noteId", json)?.apply()
+
+        // Schedule it
+        com.scryme.notes.receiver.ReminderScheduler.scheduleNoteReminder(context, noteId, noteTitle, timestamp, reminderId)
+    }
+
+    fun removeNoteReminder(
+        noteId: String,
+        reminderId: String,
+    ) {
+        val context = context ?: return
+        val currentList = getNoteReminders(noteId).filter { it.id != reminderId }
+
+        // Save back
+        val json = com.google.gson.Gson().toJson(currentList)
+        prefs?.edit()?.putString("note_reminders_list_$noteId", json)?.apply()
+
+        // Cancel it
+        com.scryme.notes.receiver.ReminderScheduler.cancelNoteReminder(context, reminderId)
+    }
+
+    fun cancelAllNoteReminders(noteId: String) {
+        val context = context ?: return
+        val currentList = getNoteReminders(noteId)
+        for (reminder in currentList) {
+            com.scryme.notes.receiver.ReminderScheduler.cancelNoteReminder(context, reminder.id)
+        }
+        prefs?.edit()?.remove("note_reminders_list_$noteId")?.apply()
+    }
+
+    fun createDailyJournalNote() {
+        viewModelScope.launch {
+            val newId = UUID.randomUUID().toString()
+            val dateFormat = java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault())
+            val dateStr = dateFormat.format(java.util.Date())
+            val title = "Journal - $dateStr"
+
+            val blocks =
+                listOf(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.CALLOUT,
+                        text = "💡 Daily Reflection Template",
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.HEADER_2,
+                        text = "What did I accomplish today?",
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "",
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.HEADER_2,
+                        text = "What am I grateful for?",
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "",
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.HEADER_2,
+                        text = "How can I improve tomorrow?",
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "",
+                    ),
+                )
+
+            val newNote =
+                Note(
+                    id = newId,
+                    title = title,
+                    blocks = blocks,
+                    parentId = null,
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis(),
+                )
+
+            repository.saveNote(newNote)
+
+            // Set the label as Journal
+            prefs?.edit()?.putString("label_note_$newId", "Journal")?.apply()
+
+            loadAllNotes()
+            selectNote(newId)
+        }
+    }
+
     fun clearAllNotes() {
         viewModelScope.launch {
             allNotes.value.forEach { note ->
                 repository.deleteNote(note.id)
+                cancelAllNoteReminders(note.id)
+                cancelNoteReminder(note.id)
             }
             _activeNote.value = null
             _breadcrumbs.value = emptyList()
@@ -315,6 +442,8 @@ class NoteViewModel(
     fun deleteNote(noteId: String) {
         viewModelScope.launch {
             repository.deleteNote(noteId)
+            cancelAllNoteReminders(noteId)
+            cancelNoteReminder(noteId)
             if (_activeNote.value?.id == noteId) {
                 _activeNote.value = null
                 _breadcrumbs.value = emptyList()
