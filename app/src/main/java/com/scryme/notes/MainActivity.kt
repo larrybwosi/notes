@@ -10,6 +10,8 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -502,9 +504,8 @@ fun BottomSheetContent(
         Spacer(modifier = Modifier.height(8.dp))
 
         if (showReminderDialog) {
-            val currentReminder = remember(note.id) { viewModel.getNoteReminder(note.id) }
+            var remindersList by remember(note.id) { mutableStateOf(viewModel.getNoteReminders(note.id)) }
             val sdf = remember { java.text.SimpleDateFormat("MMM d, yyyy HH:mm", java.util.Locale.getDefault()) }
-            val currentReminderStr = if (currentReminder > 0) sdf.format(java.util.Date(currentReminder)) else "None"
 
             AlertDialog(
                 onDismissRequest = { showReminderDialog = false },
@@ -513,63 +514,108 @@ fun BottomSheetContent(
                         Text("Done", fontWeight = FontWeight.Bold)
                     }
                 },
-                title = { Text("Set Reminder for Note") },
+                title = { Text("Manage Reminders") },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Current Reminder: $currentReminderStr", fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                        Spacer(modifier = Modifier.height(4.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("Active Reminders (${remindersList.size}):", fontWeight = FontWeight.Bold, fontSize = 14.sp)
 
-                        Button(
-                            onClick = {
-                                viewModel.setNoteReminder(note.id, note.title, System.currentTimeMillis() + 10_000L)
-                                showReminderDialog = false
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
-                        ) {
-                            Text("In 10 Seconds (Fast Test)")
+                        if (remindersList.isEmpty()) {
+                            Text("No reminders set for this note.", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        } else {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 120.dp)
+                                    .verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                remindersList.forEach { reminder ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = sdf.format(java.util.Date(reminder.timestamp)),
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        IconButton(
+                                            onClick = {
+                                                viewModel.removeNoteReminder(note.id, reminder.id)
+                                                remindersList = viewModel.getNoteReminders(note.id)
+                                                viewModel.loadAllNotes()
+                                            },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Delete Reminder",
+                                                tint = MaterialTheme.colorScheme.error,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
 
-                        Button(
-                            onClick = {
-                                viewModel.setNoteReminder(note.id, note.title, System.currentTimeMillis() + 60_000L)
-                                showReminderDialog = false
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text("In 1 Minute")
-                        }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-                        Button(
-                            onClick = {
-                                viewModel.setNoteReminder(note.id, note.title, System.currentTimeMillis() + 3600_000L)
-                                showReminderDialog = false
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text("In 1 Hour")
-                        }
+                        Text("Add Custom Reminder:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
 
-                        Button(
-                            onClick = {
-                                viewModel.setNoteReminder(note.id, note.title, System.currentTimeMillis() + 24 * 3600_000L)
-                                showReminderDialog = false
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text("In 24 Hours")
-                        }
-
-                        if (currentReminder > 0) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(
                                 onClick = {
-                                    viewModel.cancelNoteReminder(note.id)
-                                    showReminderDialog = false
+                                    viewModel.addNoteReminder(note.id, note.title, System.currentTimeMillis() + 10_000L)
+                                    remindersList = viewModel.getNoteReminders(note.id)
+                                    viewModel.loadAllNotes()
                                 },
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
                             ) {
-                                Text("Cancel Reminder")
+                                Text("In 10 Seconds (Fast Test)")
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        viewModel.addNoteReminder(note.id, note.title, System.currentTimeMillis() + 60_000L)
+                                        remindersList = viewModel.getNoteReminders(note.id)
+                                        viewModel.loadAllNotes()
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                ) {
+                                    Text("1 Min")
+                                }
+
+                                Button(
+                                    onClick = {
+                                        viewModel.addNoteReminder(note.id, note.title, System.currentTimeMillis() + 3600_000L)
+                                        remindersList = viewModel.getNoteReminders(note.id)
+                                        viewModel.loadAllNotes()
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                ) {
+                                    Text("1 Hour")
+                                }
+
+                                Button(
+                                    onClick = {
+                                        viewModel.addNoteReminder(note.id, note.title, System.currentTimeMillis() + 24 * 3600_000L)
+                                        remindersList = viewModel.getNoteReminders(note.id)
+                                        viewModel.loadAllNotes()
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                ) {
+                                    Text("1 Day")
+                                }
                             }
                         }
                     }
@@ -904,10 +950,11 @@ fun BottomSheetContent(
         }
 
         // Vertical Option Rows
+        val activeReminders = remember(note.id) { viewModel.getNoteReminders(note.id).size }
         val options =
             listOf(
                 Triple(if (isPinned) "Unpin Note" else "Pin", Icons.Default.PushPin, { onTogglePin() }),
-                Triple("Set Reminder", Icons.Default.NotificationsActive, { showReminderDialog = true }),
+                Triple(if (activeReminders > 0) "Manage Reminders ($activeReminders)" else "Manage Reminders", Icons.Default.NotificationsActive, { showReminderDialog = true }),
                 Triple("Add Thumbnail", Icons.Default.AddPhotoAlternate, { showAddThumbnailDialog = true }),
                 Triple("Label", Icons.Default.Label, { showLabelSelectorDialog = true }),
                 Triple("Send", Icons.Default.Send, { onSend() }),
