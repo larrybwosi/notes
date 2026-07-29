@@ -218,12 +218,51 @@ class NoteViewModel(
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.CALLOUT,
-                        text = "💡 Daily Reflection Template",
+                        text = "✨ \"The secret of your future is hidden in your daily routine.\" — Daily Reflection",
                     ),
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.HEADER_2,
-                        text = "What did I accomplish today?",
+                        text = "🎯 Daily Focus & Intentions",
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "One main goal for today: ",
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.HEADER_2,
+                        text = "⚡ Daily Habit Tracker",
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.TODO_LIST_ITEM,
+                        text = "Meditated 🧘",
+                        properties = mapOf("checked" to "false"),
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.TODO_LIST_ITEM,
+                        text = "Exercised 🏃",
+                        properties = mapOf("checked" to "false"),
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.TODO_LIST_ITEM,
+                        text = "Drank 8 glasses of water 💧",
+                        properties = mapOf("checked" to "false"),
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.TODO_LIST_ITEM,
+                        text = "Read a book 📖",
+                        properties = mapOf("checked" to "false"),
+                    ),
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.HEADER_2,
+                        text = "🏆 What did I accomplish today?",
                     ),
                     Block(
                         id = UUID.randomUUID().toString(),
@@ -233,7 +272,7 @@ class NoteViewModel(
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.HEADER_2,
-                        text = "What am I grateful for?",
+                        text = "🙏 What am I grateful for?",
                     ),
                     Block(
                         id = UUID.randomUUID().toString(),
@@ -243,7 +282,7 @@ class NoteViewModel(
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.HEADER_2,
-                        text = "How can I improve tomorrow?",
+                        text = "📈 How can I improve tomorrow?",
                     ),
                     Block(
                         id = UUID.randomUUID().toString(),
@@ -644,6 +683,50 @@ class NoteViewModel(
             )
         _activeNote.value = updated
         _focusedBlockId.value = targetFocusId
+        saveNoteDynamically(updated)
+    }
+
+    fun mergeBlockWithPrevious(blockId: String) {
+        val current = _activeNote.value ?: return
+        val index = current.blocks.indexOfFirst { it.id == blockId }
+        if (index <= 0) {
+            if (index == 0) {
+                val block = current.blocks.firstOrNull()
+                if (block != null && block.text.isEmpty()) {
+                    deleteBlock(blockId)
+                }
+            }
+            return
+        }
+
+        val prevBlock = current.blocks[index - 1]
+        val currentBlock = current.blocks[index]
+
+        val mergedText = prevBlock.text + currentBlock.text
+        val prevLength = prevBlock.text.length
+        val shiftedStyles = currentBlock.inlineStyles.map { span ->
+            span.copy(
+                start = span.start + prevLength,
+                end = span.end + prevLength
+            )
+        }
+        val mergedStyles = prevBlock.inlineStyles + shiftedStyles
+
+        val updatedPrevBlock = prevBlock.copy(
+            text = mergedText,
+            inlineStyles = mergedStyles
+        )
+
+        val updatedList = current.blocks.toMutableList()
+        updatedList[index - 1] = updatedPrevBlock
+        updatedList.removeAt(index)
+
+        val updated = current.copy(
+            blocks = updatedList,
+            updatedAt = System.currentTimeMillis()
+        )
+        _activeNote.value = updated
+        _focusedBlockId.value = prevBlock.id
         saveNoteDynamically(updated)
     }
 

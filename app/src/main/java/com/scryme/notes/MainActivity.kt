@@ -570,6 +570,69 @@ fun BottomSheetContent(
                         Text("Add Custom Reminder:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
 
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Custom Date & Time Picker Button
+                            Button(
+                                onClick = {
+                                    val calendar = java.util.Calendar.getInstance()
+                                    val datePickerDialog = android.app.DatePickerDialog(
+                                        context,
+                                        { _, year, month, dayOfMonth ->
+                                            calendar.set(java.util.Calendar.YEAR, year)
+                                            calendar.set(java.util.Calendar.MONTH, month)
+                                            calendar.set(java.util.Calendar.DAY_OF_MONTH, dayOfMonth)
+
+                                            val timePickerDialog = android.app.TimePickerDialog(
+                                                context,
+                                                { _, hourOfDay, minute ->
+                                                    calendar.set(java.util.Calendar.HOUR_OF_DAY, hourOfDay)
+                                                    calendar.set(java.util.Calendar.MINUTE, minute)
+                                                    calendar.set(java.util.Calendar.SECOND, 0)
+                                                    calendar.set(java.util.Calendar.MILLISECOND, 0)
+
+                                                    val customTimestamp = calendar.timeInMillis
+                                                    if (customTimestamp > System.currentTimeMillis()) {
+                                                        viewModel.addNoteReminder(note.id, note.title, customTimestamp)
+                                                        remindersList = viewModel.getNoteReminders(note.id)
+                                                        viewModel.loadAllNotes()
+                                                    } else {
+                                                        android.widget.Toast.makeText(
+                                                            context,
+                                                            "Please select a future date & time",
+                                                            android.widget.Toast.LENGTH_SHORT
+                                                        ).show()
+                                                    }
+                                                },
+                                                calendar.get(java.util.Calendar.HOUR_OF_DAY),
+                                                calendar.get(java.util.Calendar.MINUTE),
+                                                true
+                                            )
+                                            timePickerDialog.show()
+                                        },
+                                        calendar.get(java.util.Calendar.YEAR),
+                                        calendar.get(java.util.Calendar.MONTH),
+                                        calendar.get(java.util.Calendar.DAY_OF_MONTH)
+                                    )
+                                    datePickerDialog.show()
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ),
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Event,
+                                        contentDescription = "Pick Custom Date & Time",
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text("Pick Custom Date & Time", fontWeight = FontWeight.Bold)
+                                }
+                            }
+
                             Button(
                                 onClick = {
                                     viewModel.addNoteReminder(note.id, note.title, System.currentTimeMillis() + 10_000L)

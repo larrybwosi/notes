@@ -232,7 +232,8 @@ fun NoteEditorScreen(
                         .fillMaxWidth()
                         .clickable { viewModel.createDailyJournalNote() },
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.12f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                 border =
                     androidx.compose.foundation.BorderStroke(
                         width = 1.dp,
@@ -246,37 +247,56 @@ fun NoteEditorScreen(
                     Box(
                         modifier =
                             Modifier
-                                .size(40.dp)
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape),
+                                .size(44.dp)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), CircleShape),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Book,
+                            imageVector = Icons.Default.AutoAwesome,
                             contentDescription = "Journal Icon",
                             tint = MaterialTheme.colorScheme.primary,
                         )
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Start Daily Journal",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontFamily = selectedFontFamily,
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Start Daily Journal",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontFamily = selectedFontFamily,
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            // Premium Badge
+                            Box(
+                                modifier = Modifier
+                                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "PRO",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    letterSpacing = 0.5.sp,
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Quickly log today's thoughts, accomplishments & improvements.",
                             fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
                             fontFamily = selectedFontFamily,
+                            lineHeight = 16.sp,
                         )
                     }
                     Icon(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = "Go",
                         tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
@@ -732,7 +752,7 @@ fun NoteEditorScreen(
                             }
                         },
                         onBackspaceOnEmpty = {
-                            viewModel.deleteBlock(block.id)
+                            viewModel.mergeBlockWithPrevious(block.id)
                         },
                         onToggleTodo = {
                             viewModel.toggleTodoBlockChecked(block.id)
@@ -1237,7 +1257,11 @@ fun BlockEditorItem(
                 value = textFieldValue,
                 onValueChange = { newValue ->
                     val oldText = textFieldValue.text
-                    if (newValue.text.contains("\n")) {
+                    if (newValue.text.isEmpty() && oldText.isNotEmpty()) {
+                        textFieldValue = newValue
+                        onTextChanged("")
+                        onBackspaceOnEmpty()
+                    } else if (newValue.text.contains("\n")) {
                         val index = newValue.text.indexOf('\n')
                         val beforeText = newValue.text.substring(0, index)
                         val afterText = newValue.text.substring(index + 1)
@@ -1337,7 +1361,7 @@ fun BlockEditorItem(
                                     onTextChanged(beforeText)
                                     onEnterPressed(afterText)
                                     true
-                                } else if (keyEvent.key == Key.Backspace && textFieldValue.text.isEmpty()) {
+                                } else if (keyEvent.key == Key.Backspace && (textFieldValue.text.isEmpty() || (textFieldValue.selection.start == 0 && textFieldValue.selection.end == 0))) {
                                     onBackspaceOnEmpty()
                                     true
                                 } else {
