@@ -246,11 +246,11 @@ class NoteViewModelTest {
             val active = viewModel.activeNote.value
             assertNotNull(active)
             assertTrue(active!!.title.startsWith("Journal - "))
-            assertEquals(7, active.blocks.size)
+            assertEquals(14, active.blocks.size)
             assertEquals(BlockType.CALLOUT, active.blocks[0].type)
-            assertEquals("💡 Daily Reflection Template", active.blocks[0].text)
+            assertEquals("✨ \"The secret of your future is hidden in your daily routine.\" — Daily Reflection", active.blocks[0].text)
             assertEquals(BlockType.HEADER_2, active.blocks[1].type)
-            assertEquals("What did I accomplish today?", active.blocks[1].text)
+            assertEquals("🎯 Daily Focus & Intentions", active.blocks[1].text)
             assertEquals(BlockType.BULLETED_LIST_ITEM, active.blocks[2].type)
 
             // Verify label saved in prefs

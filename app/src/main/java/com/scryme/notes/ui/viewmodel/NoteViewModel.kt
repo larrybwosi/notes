@@ -704,27 +704,30 @@ class NoteViewModel(
 
         val mergedText = prevBlock.text + currentBlock.text
         val prevLength = prevBlock.text.length
-        val shiftedStyles = currentBlock.inlineStyles.map { span ->
-            span.copy(
-                start = span.start + prevLength,
-                end = span.end + prevLength
-            )
-        }
+        val shiftedStyles =
+            currentBlock.inlineStyles.map { span ->
+                span.copy(
+                    start = span.start + prevLength,
+                    end = span.end + prevLength,
+                )
+            }
         val mergedStyles = prevBlock.inlineStyles + shiftedStyles
 
-        val updatedPrevBlock = prevBlock.copy(
-            text = mergedText,
-            inlineStyles = mergedStyles
-        )
+        val updatedPrevBlock =
+            prevBlock.copy(
+                text = mergedText,
+                inlineStyles = mergedStyles,
+            )
 
         val updatedList = current.blocks.toMutableList()
         updatedList[index - 1] = updatedPrevBlock
         updatedList.removeAt(index)
 
-        val updated = current.copy(
-            blocks = updatedList,
-            updatedAt = System.currentTimeMillis()
-        )
+        val updated =
+            current.copy(
+                blocks = updatedList,
+                updatedAt = System.currentTimeMillis(),
+            )
         _activeNote.value = updated
         _focusedBlockId.value = prevBlock.id
         saveNoteDynamically(updated)

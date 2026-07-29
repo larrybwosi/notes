@@ -270,9 +270,10 @@ fun NoteEditorScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             // Premium Badge
                             Box(
-                                modifier = Modifier
-                                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier =
+                                    Modifier
+                                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
                             ) {
                                 Text(
                                     text = "PRO",
@@ -296,7 +297,7 @@ fun NoteEditorScreen(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = "Go",
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(24.dp),
                     )
                 }
             }
