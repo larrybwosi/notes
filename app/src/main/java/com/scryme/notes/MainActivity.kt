@@ -28,13 +28,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
 import com.scryme.notes.domain.model.Note
 import com.scryme.notes.ui.DatabaseProvider
 import com.scryme.notes.ui.screens.NoteEditorScreen
 import com.scryme.notes.ui.screens.SettingsScreen
 import com.scryme.notes.ui.screens.WorkspaceScreen
+import com.scryme.notes.ui.utils.UpdateChecker
 import com.scryme.notes.ui.viewmodel.NoteViewModel
 import com.scryme.notes.ui.viewmodel.NoteViewModelFactory
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -54,6 +57,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        lifecycleScope.launch {
+            UpdateChecker.checkForUpdates(applicationContext)
+        }
 
         val launchNoteId = intent?.getStringExtra("LAUNCH_NOTE_ID")
         if (!launchNoteId.isNullOrEmpty()) {
