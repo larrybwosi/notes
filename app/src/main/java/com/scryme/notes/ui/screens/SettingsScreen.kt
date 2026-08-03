@@ -468,14 +468,15 @@ fun SettingsScreen(
             // Section 4: About
             SettingsSection(title = "About Scryme Notes") {
                 val context = androidx.compose.ui.platform.LocalContext.current
-                val realVersionName = remember {
-                    try {
-                        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                        packageInfo.versionName ?: "1.0.0"
-                    } catch (e: Exception) {
-                        "1.0.0"
+                val realVersionName =
+                    remember {
+                        try {
+                            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                            packageInfo.versionName ?: "1.0.0"
+                        } catch (e: Exception) {
+                            "1.0.0"
+                        }
                     }
-                }
 
                 Row(
                     modifier =

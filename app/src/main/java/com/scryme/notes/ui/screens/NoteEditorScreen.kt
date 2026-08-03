@@ -571,14 +571,15 @@ fun NoteEditorScreen(
     val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null
-            ) {
-                focusManager.clearFocus()
-            },
+        modifier =
+            modifier
+                .fillMaxSize()
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                ) {
+                    focusManager.clearFocus()
+                },
     ) {
         Column(
             modifier =
