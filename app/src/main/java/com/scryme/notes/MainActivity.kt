@@ -124,6 +124,34 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
     var showBottomSheet by remember { mutableStateOf(false) }
     var showSettingsPage by remember { mutableStateOf(false) }
 
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+
+    val navigateBack = {
+        focusManager.clearFocus()
+        if (activeNote != null) {
+            val parentId = activeNote?.parentId
+            if (parentId != null) {
+                viewModel.selectNote(parentId)
+            } else {
+                viewModel.deselectActiveNote()
+            }
+        }
+    }
+
+    if (showSettingsPage) {
+        androidx.activity.compose.BackHandler {
+            showSettingsPage = false
+        }
+    } else if (sidebarVisible) {
+        androidx.activity.compose.BackHandler {
+            sidebarVisible = false
+        }
+    } else if (activeNote != null) {
+        androidx.activity.compose.BackHandler {
+            navigateBack()
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         // Main Editor Area with Toolbar at the top to toggle sidebar
         Column(
@@ -154,7 +182,7 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
                 if (activeNote != null) {
                     // Left back/navigation chevron next to menu button to return to Welcome Screen
                     IconButton(
-                        onClick = { viewModel.deselectActiveNote() },
+                        onClick = { navigateBack() },
                     ) {
                         Icon(
                             imageVector = Icons.Default.ChevronLeft,

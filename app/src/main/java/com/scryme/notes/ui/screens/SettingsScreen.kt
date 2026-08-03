@@ -467,6 +467,16 @@ fun SettingsScreen(
 
             // Section 4: About
             SettingsSection(title = "About Scryme Notes") {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val realVersionName = remember {
+                    try {
+                        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                        packageInfo.versionName ?: "1.0.0"
+                    } catch (e: Exception) {
+                        "1.0.0"
+                    }
+                }
+
                 Row(
                     modifier =
                         Modifier
@@ -486,26 +496,19 @@ fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
-                            text = "Scryme Notes v1.0.0",
+                            text = "Scryme Notes v$realVersionName",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
-                            text = "A modern Notion-like block editor featuring sub-notebook hierarchy, markdown shortcuts, rich inline text formatting, Obsidian-style organization, and collaborative high-fidelity UI avatars.",
+                            text = "Scryme Notes is a privacy-first, offline workspace powered by a block-based rich text editor. Effortlessly structure your knowledge with recursive sub-page hierarchies, format blocks using Markdown shortcuts, schedule custom date-time reminders, and attach media resources—all stored safely on your device.",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 16.sp,
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Built with Jetpack Compose & SQLite.",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
             }
         }
     }
