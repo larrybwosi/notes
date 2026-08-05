@@ -196,65 +196,7 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
                 Spacer(modifier = Modifier.width(8.dp))
 
                 if (activeNote != null) {
-                    // Centered circular overlapping avatars (High-Fidelity)
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        val colors = listOf(Color(0xFFFFCDD2), Color(0xFFC8E6C9), Color(0xFFBBDEFB))
-                        val letters = listOf("H", "J", "S")
-                        Box(
-                            modifier = Modifier.width(64.dp),
-                            contentAlignment = Alignment.CenterStart,
-                        ) {
-                            Surface(
-                                modifier = Modifier.size(26.dp),
-                                shape = CircleShape,
-                                color = colors[0],
-                                border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White),
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        letters[0],
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                    )
-                                }
-                            }
-                            Surface(
-                                modifier = Modifier.size(26.dp).offset(x = 16.dp),
-                                shape = CircleShape,
-                                color = colors[1],
-                                border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White),
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        letters[1],
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                    )
-                                }
-                            }
-                            Surface(
-                                modifier = Modifier.size(26.dp).offset(x = 32.dp),
-                                shape = CircleShape,
-                                color = colors[2],
-                                border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White),
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        letters[2],
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    Spacer(modifier = Modifier.weight(1f))
 
                     // Done checkmark action button
                     IconButton(
@@ -425,6 +367,29 @@ fun BottomSheetContent(
             android.widget.Toast.makeText(context, "Note Pinned to top!", android.widget.Toast.LENGTH_SHORT).show()
         }
         prefs.edit().putStringSet("pinned_notes", pinnedSet).apply()
+        viewModel.loadAllNotes()
+        onDismiss()
+    }
+
+    val isArchived =
+        remember(note.id) {
+            val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+            val archivedSet = prefs.getStringSet("archived_notes", emptySet()) ?: emptySet()
+            archivedSet.contains(note.id)
+        }
+
+    val onToggleArchive = {
+        val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+        val archivedSet = (prefs.getStringSet("archived_notes", emptySet()) ?: emptySet()).toMutableSet()
+        if (archivedSet.contains(note.id)) {
+            archivedSet.remove(note.id)
+            android.widget.Toast.makeText(context, "Note Unarchived", android.widget.Toast.LENGTH_SHORT).show()
+        } else {
+            archivedSet.add(note.id)
+            android.widget.Toast.makeText(context, "Note Archived", android.widget.Toast.LENGTH_SHORT).show()
+            viewModel.deselectActiveNote()
+        }
+        prefs.edit().putStringSet("archived_notes", archivedSet).apply()
         viewModel.loadAllNotes()
         onDismiss()
     }
@@ -1063,6 +1028,7 @@ fun BottomSheetContent(
                 Triple("Send", Icons.Default.Send, { onSend() }),
                 Triple("Make a Copy", Icons.Default.ContentCopy, onDuplicateNote),
                 Triple(if (isLocked) "Unlock Note" else "Lock Note", Icons.Default.Lock, { onToggleLock() }),
+                Triple(if (isArchived) "Unarchive Note" else "Archive Note", if (isArchived) Icons.Default.Unarchive else Icons.Default.Archive, { onToggleArchive() }),
                 Triple("Delete Note", Icons.Default.Delete, onDeleteNote),
             )
 
