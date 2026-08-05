@@ -238,7 +238,15 @@ class NoteViewModelTest {
     @Test
     fun testCreateDailyJournalNote_InitializesWithJournalLayoutAndLabel() =
         runTest {
-            // Act
+            // Act: Toggle some preferences
+            viewModel.setJournalIncludeStandup(true)
+            viewModel.setJournalIncludeOkrs(true)
+            viewModel.setJournalIncludeProductivity(true)
+            viewModel.setJournalIncludeTimeLogs(true)
+            viewModel.setJournalIncludeTimeTracking(true)
+            viewModel.setJournalIncludeHabitTracker(true)
+            viewModel.setJournalHabitsList("Drink water 💧, Eat healthy 🥗")
+
             viewModel.createDailyJournalNote()
             testDispatcher.scheduler.advanceUntilIdle()
 
@@ -246,16 +254,51 @@ class NoteViewModelTest {
             val active = viewModel.activeNote.value
             assertNotNull(active)
             assertTrue(active!!.title.startsWith("Journal - "))
-            assertEquals(14, active.blocks.size)
-            assertEquals(BlockType.CALLOUT, active.blocks[0].type)
-            assertEquals("✨ \"The secret of your future is hidden in your daily routine.\" — Daily Reflection", active.blocks[0].text)
-            assertEquals(BlockType.HEADER_2, active.blocks[1].type)
-            assertEquals("🎯 Daily Focus & Intentions", active.blocks[1].text)
-            assertEquals(BlockType.BULLETED_LIST_ITEM, active.blocks[2].type)
+
+            // Check that custom habits are populated correctly
+            val customHabits = active.blocks.filter { it.type == BlockType.TODO_LIST_ITEM }
+            assertEquals(2, customHabits.size)
+            assertEquals("Drink water 💧", customHabits[0].text)
+            assertEquals("Eat healthy 🥗", customHabits[1].text)
+
+            // Check standup, okr, productivity, timelogs, timetracking headers exist
+            val headers = active.blocks.filter { it.type == BlockType.HEADER_2 }.map { it.text }
+            assertTrue(headers.contains("📋 Daily Standup"))
+            assertTrue(headers.contains("🎯 Target Goals & OKRs"))
+            assertTrue(headers.contains("⚡ Focus & Productivity"))
+            assertTrue(headers.contains("🕒 Enterprise Time Logs"))
+            assertTrue(headers.contains("💼 Task Time Tracking"))
 
             // Verify label saved in prefs
             val savedLabel = fakePrefs.getString("label_note_${active.id}", null)
             assertEquals("Journal", savedLabel)
+        }
+
+    @Test
+    fun testCreateDailyJournalNote_DynamicFilterSections() =
+        runTest {
+            // Act: Disable most sections
+            viewModel.setJournalIncludeStandup(false)
+            viewModel.setJournalIncludeOkrs(false)
+            viewModel.setJournalIncludeProductivity(false)
+            viewModel.setJournalIncludeTimeLogs(false)
+            viewModel.setJournalIncludeTimeTracking(false)
+            viewModel.setJournalIncludeHabitTracker(false)
+
+            viewModel.createDailyJournalNote()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // Assert
+            val active = viewModel.activeNote.value
+            assertNotNull(active)
+
+            val headers = active!!.blocks.filter { it.type == BlockType.HEADER_2 }.map { it.text }
+            assertTrue(!headers.contains("📋 Daily Standup"))
+            assertTrue(!headers.contains("🎯 Target Goals & OKRs"))
+            assertTrue(!headers.contains("⚡ Focus & Productivity"))
+            assertTrue(!headers.contains("🕒 Enterprise Time Logs"))
+            assertTrue(!headers.contains("💼 Task Time Tracking"))
+            assertTrue(!headers.contains("✅ Daily Habit Tracker"))
         }
 
     @Test

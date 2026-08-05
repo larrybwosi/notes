@@ -51,6 +51,15 @@ fun SettingsScreen(
 
     val fontFamilies = listOf("Sans-Serif", "Serif", "Monospace", "Inter", "Roboto")
 
+    // Enterprise journaling states
+    val includeStandup by viewModel.journalIncludeStandup.collectAsState()
+    val includeProductivity by viewModel.journalIncludeProductivity.collectAsState()
+    val includeOkrs by viewModel.journalIncludeOkrs.collectAsState()
+    val includeHabitTracker by viewModel.journalIncludeHabitTracker.collectAsState()
+    val includeTimeLogs by viewModel.journalIncludeTimeLogs.collectAsState()
+    val includeTimeTracking by viewModel.journalIncludeTimeTracking.collectAsState()
+    val habitsListStr by viewModel.journalHabitsList.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -300,6 +309,118 @@ fun SettingsScreen(
                                         }
                                     }
                                 },
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Section 1.8: Enterprise Journal Settings
+            SettingsSection(title = "Enterprise Journal Settings") {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "Customize the blocks generated when you tap \"Start Daily Journal\" on the dashboard.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    // Standup
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Daily Standup Section", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text("Include yesterday, today, and blockers logs", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = includeStandup, onCheckedChange = { viewModel.setJournalIncludeStandup(it) })
+                    }
+
+                    // OKRs / Goals
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Target Goals & OKRs", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text("Add quarterly goals and daily priority metrics", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = includeOkrs, onCheckedChange = { viewModel.setJournalIncludeOkrs(it) })
+                    }
+
+                    // Productivity Rating
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Focus & Productivity Ratings", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text("Ask for productivity levels (1-10) and distraction trackers", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = includeProductivity, onCheckedChange = { viewModel.setJournalIncludeProductivity(it) })
+                    }
+
+                    // Time Logs
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Workday Time Logs", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text("Log clock in, clock out, and meeting schedules", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = includeTimeLogs, onCheckedChange = { viewModel.setJournalIncludeTimeLogs(it) })
+                    }
+
+                    // Task Time Tracking
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Task Duration Tracking", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text("Track specific tasks with detailed hours spent logs", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = includeTimeTracking, onCheckedChange = { viewModel.setJournalIncludeTimeTracking(it) })
+                    }
+
+                    // Habit Tracker Toggle
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Habit Tracker Checklists", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                            Text("Include standard/custom tasks in habit block tracker", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = includeHabitTracker, onCheckedChange = { viewModel.setJournalIncludeHabitTracker(it) })
+                    }
+
+                    if (includeHabitTracker) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text("Custom Habits List (Comma separated)", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Spacer(modifier = Modifier.height(6.dp))
+                            var habitsInput by remember(habitsListStr) { mutableStateOf(habitsListStr) }
+                            OutlinedTextField(
+                                value = habitsInput,
+                                onValueChange = {
+                                    habitsInput = it
+                                    viewModel.setJournalHabitsList(it)
+                                },
+                                placeholder = { Text("e.g. Meditated 🧘, Drank water 💧") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(8.dp),
+                                colors =
+                                    OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                    ),
                             )
                         }
                     }
