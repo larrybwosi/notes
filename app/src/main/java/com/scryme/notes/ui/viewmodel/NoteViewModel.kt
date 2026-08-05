@@ -278,7 +278,7 @@ class NoteViewModel(
                     id = UUID.randomUUID().toString(),
                     type = BlockType.CALLOUT,
                     text = "✨ \"The secret of your future is hidden in your daily routine.\" — Daily Reflection",
-                )
+                ),
             )
 
             // 2. Daily Standup (What did I do yesterday, What am I doing today, Blockers)
@@ -288,28 +288,28 @@ class NoteViewModel(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.HEADER_2,
                         text = "📋 Daily Standup",
-                    )
+                    ),
                 )
                 blocks.add(
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.BULLETED_LIST_ITEM,
                         text = "Yesterday: ",
-                    )
+                    ),
                 )
                 blocks.add(
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.BULLETED_LIST_ITEM,
                         text = "Today: ",
-                    )
+                    ),
                 )
                 blocks.add(
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.BULLETED_LIST_ITEM,
                         text = "Blockers: None",
-                    )
+                    ),
                 )
             }
 
@@ -320,21 +320,21 @@ class NoteViewModel(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.HEADER_2,
                         text = "🎯 Target Goals & OKRs",
-                    )
+                    ),
                 )
                 blocks.add(
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.BULLETED_LIST_ITEM,
                         text = "Quarterly Goal: ",
-                    )
+                    ),
                 )
                 blocks.add(
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.BULLETED_LIST_ITEM,
                         text = "Daily Priority: ",
-                    )
+                    ),
                 )
             }
 
@@ -345,21 +345,21 @@ class NoteViewModel(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.HEADER_2,
                         text = "⚡ Focus & Productivity",
-                    )
+                    ),
                 )
                 blocks.add(
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.BULLETED_LIST_ITEM,
                         text = "Productivity Level (1-10): ",
-                    )
+                    ),
                 )
                 blocks.add(
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.BULLETED_LIST_ITEM,
                         text = "Main distraction: ",
-                    )
+                    ),
                 )
             }
 
@@ -370,11 +370,12 @@ class NoteViewModel(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.HEADER_2,
                         text = "✅ Daily Habit Tracker",
-                    )
+                    ),
                 )
-                val habits = _journalHabitsList.value.split(",")
-                    .map { it.trim() }
-                    .filter { it.isNotEmpty() }
+                val habits =
+                    _journalHabitsList.value.split(",")
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() }
                 for (habit in habits) {
                     blocks.add(
                         Block(
@@ -382,7 +383,7 @@ class NoteViewModel(
                             type = BlockType.TODO_LIST_ITEM,
                             text = habit,
                             properties = mapOf("checked" to "false"),
-                        )
+                        ),
                     )
                 }
             }
@@ -394,28 +395,28 @@ class NoteViewModel(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.HEADER_2,
                         text = "🕒 Enterprise Time Logs",
-                    )
+                    ),
                 )
                 blocks.add(
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.BULLETED_LIST_ITEM,
                         text = "Clock In: 09:00 AM",
-                    )
+                    ),
                 )
                 blocks.add(
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.BULLETED_LIST_ITEM,
                         text = "Clock Out: 05:00 PM",
-                    )
+                    ),
                 )
                 blocks.add(
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.BULLETED_LIST_ITEM,
                         text = "Key Meetings: ",
-                    )
+                    ),
                 )
             }
 
@@ -426,21 +427,21 @@ class NoteViewModel(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.HEADER_2,
                         text = "💼 Task Time Tracking",
-                    )
+                    ),
                 )
                 blocks.add(
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.BULLETED_LIST_ITEM,
                         text = "Task A - [Duration: 2.0 hrs]",
-                    )
+                    ),
                 )
                 blocks.add(
                     Block(
                         id = UUID.randomUUID().toString(),
                         type = BlockType.BULLETED_LIST_ITEM,
                         text = "Task B - [Duration: 1.5 hrs]",
-                    )
+                    ),
                 )
             }
 
@@ -450,42 +451,42 @@ class NoteViewModel(
                     id = UUID.randomUUID().toString(),
                     type = BlockType.HEADER_2,
                     text = "🏆 What did I accomplish today?",
-                )
+                ),
             )
             blocks.add(
                 Block(
                     id = UUID.randomUUID().toString(),
                     type = BlockType.BULLETED_LIST_ITEM,
                     text = "",
-                )
+                ),
             )
             blocks.add(
                 Block(
                     id = UUID.randomUUID().toString(),
                     type = BlockType.HEADER_2,
                     text = "🙏 What am I grateful for?",
-                )
+                ),
             )
             blocks.add(
                 Block(
                     id = UUID.randomUUID().toString(),
                     type = BlockType.BULLETED_LIST_ITEM,
                     text = "",
-                )
+                ),
             )
             blocks.add(
                 Block(
                     id = UUID.randomUUID().toString(),
                     type = BlockType.HEADER_2,
                     text = "📈 How can I improve tomorrow?",
-                )
+                ),
             )
             blocks.add(
                 Block(
                     id = UUID.randomUUID().toString(),
                     type = BlockType.BULLETED_LIST_ITEM,
                     text = "",
-                )
+                ),
             )
 
             val newNote =
