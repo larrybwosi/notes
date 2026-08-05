@@ -1349,11 +1349,12 @@ fun BlockEditorItem(
                             onTextChanged(remainingText)
                             onChangeType(targetType)
                         } else {
-                            val cleanNewText = if (newValue.text.length > 1 && newValue.text.contains("\u200B")) {
-                                newValue.text.replace("\u200B", "")
-                            } else {
-                                newValue.text
-                            }
+                            val cleanNewText =
+                                if (newValue.text.length > 1 && newValue.text.contains("\u200B")) {
+                                    newValue.text.replace("\u200B", "")
+                                } else {
+                                    newValue.text
+                                }
                             textFieldValue = newValue.copy(text = cleanNewText)
                             // Callback to trigger text updates
                             val oldCleanText = oldText.replace("\u200B", "")
@@ -1397,10 +1398,12 @@ fun BlockEditorItem(
                                     onEnterPressed(afterText)
                                     true
                                 } else if (keyEvent.key == Key.Backspace &&
-                                    (textFieldValue.text.isEmpty() ||
-                                     textFieldValue.text == "\u200B" ||
-                                     (textFieldValue.selection.start == 0 && textFieldValue.selection.end == 0) ||
-                                     (textFieldValue.text.startsWith("\u200B") && textFieldValue.selection.start <= 1 && textFieldValue.selection.end <= 1))
+                                    (
+                                        textFieldValue.text.isEmpty() ||
+                                            textFieldValue.text == "\u200B" ||
+                                            (textFieldValue.selection.start == 0 && textFieldValue.selection.end == 0) ||
+                                            (textFieldValue.text.startsWith("\u200B") && textFieldValue.selection.start <= 1 && textFieldValue.selection.end <= 1)
+                                    )
                                 ) {
                                     onBackspaceOnEmpty()
                                     true
