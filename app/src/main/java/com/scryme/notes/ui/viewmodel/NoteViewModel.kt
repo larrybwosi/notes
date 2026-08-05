@@ -68,6 +68,63 @@ class NoteViewModel(
     private val _dailyReminderTime = MutableStateFlow(prefs?.getString("daily_reminder_time", "09:00") ?: "09:00")
     val dailyReminderTime: StateFlow<String> = _dailyReminderTime.asStateFlow()
 
+    // --- Enterprise Journaling Preference Fields ---
+    private val _journalIncludeStandup = MutableStateFlow(prefs?.getBoolean("journal_include_standup", true) ?: true)
+    val journalIncludeStandup: StateFlow<Boolean> = _journalIncludeStandup.asStateFlow()
+
+    private val _journalIncludeProductivity = MutableStateFlow(prefs?.getBoolean("journal_include_productivity", true) ?: true)
+    val journalIncludeProductivity: StateFlow<Boolean> = _journalIncludeProductivity.asStateFlow()
+
+    private val _journalIncludeOkrs = MutableStateFlow(prefs?.getBoolean("journal_include_okrs", true) ?: true)
+    val journalIncludeOkrs: StateFlow<Boolean> = _journalIncludeOkrs.asStateFlow()
+
+    private val _journalIncludeHabitTracker = MutableStateFlow(prefs?.getBoolean("journal_include_habit_tracker", true) ?: true)
+    val journalIncludeHabitTracker: StateFlow<Boolean> = _journalIncludeHabitTracker.asStateFlow()
+
+    private val _journalIncludeTimeLogs = MutableStateFlow(prefs?.getBoolean("journal_include_time_logs", true) ?: true)
+    val journalIncludeTimeLogs: StateFlow<Boolean> = _journalIncludeTimeLogs.asStateFlow()
+
+    private val _journalIncludeTimeTracking = MutableStateFlow(prefs?.getBoolean("journal_include_time_tracking", true) ?: true)
+    val journalIncludeTimeTracking: StateFlow<Boolean> = _journalIncludeTimeTracking.asStateFlow()
+
+    private val _journalHabitsList = MutableStateFlow(prefs?.getString("journal_habits_list", "Meditated 🧘, Exercised 🏃, Drank 8 glasses of water 💧, Read a book 📖") ?: "Meditated 🧘, Exercised 🏃, Drank 8 glasses of water 💧, Read a book 📖")
+    val journalHabitsList: StateFlow<String> = _journalHabitsList.asStateFlow()
+
+    fun setJournalIncludeStandup(enabled: Boolean) {
+        _journalIncludeStandup.value = enabled
+        prefs?.edit()?.putBoolean("journal_include_standup", enabled)?.apply()
+    }
+
+    fun setJournalIncludeProductivity(enabled: Boolean) {
+        _journalIncludeProductivity.value = enabled
+        prefs?.edit()?.putBoolean("journal_include_productivity", enabled)?.apply()
+    }
+
+    fun setJournalIncludeOkrs(enabled: Boolean) {
+        _journalIncludeOkrs.value = enabled
+        prefs?.edit()?.putBoolean("journal_include_okrs", enabled)?.apply()
+    }
+
+    fun setJournalIncludeHabitTracker(enabled: Boolean) {
+        _journalIncludeHabitTracker.value = enabled
+        prefs?.edit()?.putBoolean("journal_include_habit_tracker", enabled)?.apply()
+    }
+
+    fun setJournalIncludeTimeLogs(enabled: Boolean) {
+        _journalIncludeTimeLogs.value = enabled
+        prefs?.edit()?.putBoolean("journal_include_time_logs", enabled)?.apply()
+    }
+
+    fun setJournalIncludeTimeTracking(enabled: Boolean) {
+        _journalIncludeTimeTracking.value = enabled
+        prefs?.edit()?.putBoolean("journal_include_time_tracking", enabled)?.apply()
+    }
+
+    fun setJournalHabitsList(habits: String) {
+        _journalHabitsList.value = habits
+        prefs?.edit()?.putString("journal_habits_list", habits)?.apply()
+    }
+
     fun setDarkMode(enabled: Boolean) {
         _isDarkMode.value = enabled
         prefs?.edit()?.putBoolean("is_dark_mode", enabled)?.apply()
@@ -213,83 +270,223 @@ class NoteViewModel(
             val dateStr = dateFormat.format(java.util.Date())
             val title = "Journal - $dateStr"
 
-            val blocks =
-                listOf(
-                    Block(
-                        id = UUID.randomUUID().toString(),
-                        type = BlockType.CALLOUT,
-                        text = "✨ \"The secret of your future is hidden in your daily routine.\" — Daily Reflection",
-                    ),
-                    Block(
-                        id = UUID.randomUUID().toString(),
-                        type = BlockType.HEADER_2,
-                        text = "🎯 Daily Focus & Intentions",
-                    ),
-                    Block(
-                        id = UUID.randomUUID().toString(),
-                        type = BlockType.BULLETED_LIST_ITEM,
-                        text = "One main goal for today: ",
-                    ),
-                    Block(
-                        id = UUID.randomUUID().toString(),
-                        type = BlockType.HEADER_2,
-                        text = "⚡ Daily Habit Tracker",
-                    ),
-                    Block(
-                        id = UUID.randomUUID().toString(),
-                        type = BlockType.TODO_LIST_ITEM,
-                        text = "Meditated 🧘",
-                        properties = mapOf("checked" to "false"),
-                    ),
-                    Block(
-                        id = UUID.randomUUID().toString(),
-                        type = BlockType.TODO_LIST_ITEM,
-                        text = "Exercised 🏃",
-                        properties = mapOf("checked" to "false"),
-                    ),
-                    Block(
-                        id = UUID.randomUUID().toString(),
-                        type = BlockType.TODO_LIST_ITEM,
-                        text = "Drank 8 glasses of water 💧",
-                        properties = mapOf("checked" to "false"),
-                    ),
-                    Block(
-                        id = UUID.randomUUID().toString(),
-                        type = BlockType.TODO_LIST_ITEM,
-                        text = "Read a book 📖",
-                        properties = mapOf("checked" to "false"),
-                    ),
-                    Block(
-                        id = UUID.randomUUID().toString(),
-                        type = BlockType.HEADER_2,
-                        text = "🏆 What did I accomplish today?",
-                    ),
-                    Block(
-                        id = UUID.randomUUID().toString(),
-                        type = BlockType.BULLETED_LIST_ITEM,
-                        text = "",
-                    ),
-                    Block(
-                        id = UUID.randomUUID().toString(),
-                        type = BlockType.HEADER_2,
-                        text = "🙏 What am I grateful for?",
-                    ),
-                    Block(
-                        id = UUID.randomUUID().toString(),
-                        type = BlockType.BULLETED_LIST_ITEM,
-                        text = "",
-                    ),
-                    Block(
-                        id = UUID.randomUUID().toString(),
-                        type = BlockType.HEADER_2,
-                        text = "📈 How can I improve tomorrow?",
-                    ),
-                    Block(
-                        id = UUID.randomUUID().toString(),
-                        type = BlockType.BULLETED_LIST_ITEM,
-                        text = "",
-                    ),
+            val blocks = mutableListOf<Block>()
+
+            // 1. Quote Callout
+            blocks.add(
+                Block(
+                    id = UUID.randomUUID().toString(),
+                    type = BlockType.CALLOUT,
+                    text = "✨ \"The secret of your future is hidden in your daily routine.\" — Daily Reflection",
                 )
+            )
+
+            // 2. Daily Standup (What did I do yesterday, What am I doing today, Blockers)
+            if (_journalIncludeStandup.value) {
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.HEADER_2,
+                        text = "📋 Daily Standup",
+                    )
+                )
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "Yesterday: ",
+                    )
+                )
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "Today: ",
+                    )
+                )
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "Blockers: None",
+                    )
+                )
+            }
+
+            // 3. OKRs / Core Goals
+            if (_journalIncludeOkrs.value) {
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.HEADER_2,
+                        text = "🎯 Target Goals & OKRs",
+                    )
+                )
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "Quarterly Goal: ",
+                    )
+                )
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "Daily Priority: ",
+                    )
+                )
+            }
+
+            // 4. Productivity / Focus Rating
+            if (_journalIncludeProductivity.value) {
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.HEADER_2,
+                        text = "⚡ Focus & Productivity",
+                    )
+                )
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "Productivity Level (1-10): ",
+                    )
+                )
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "Main distraction: ",
+                    )
+                )
+            }
+
+            // 5. Habits Tracker (Customized)
+            if (_journalIncludeHabitTracker.value) {
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.HEADER_2,
+                        text = "✅ Daily Habit Tracker",
+                    )
+                )
+                val habits = _journalHabitsList.value.split(",")
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+                for (habit in habits) {
+                    blocks.add(
+                        Block(
+                            id = UUID.randomUUID().toString(),
+                            type = BlockType.TODO_LIST_ITEM,
+                            text = habit,
+                            properties = mapOf("checked" to "false"),
+                        )
+                    )
+                }
+            }
+
+            // 6. Time Logs (Option C: Workday start, meetings etc.)
+            if (_journalIncludeTimeLogs.value) {
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.HEADER_2,
+                        text = "🕒 Enterprise Time Logs",
+                    )
+                )
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "Clock In: 09:00 AM",
+                    )
+                )
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "Clock Out: 05:00 PM",
+                    )
+                )
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "Key Meetings: ",
+                    )
+                )
+            }
+
+            // 7. Time Tracking (Option A: Tasks and Duration)
+            if (_journalIncludeTimeTracking.value) {
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.HEADER_2,
+                        text = "💼 Task Time Tracking",
+                    )
+                )
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "Task A - [Duration: 2.0 hrs]",
+                    )
+                )
+                blocks.add(
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.BULLETED_LIST_ITEM,
+                        text = "Task B - [Duration: 1.5 hrs]",
+                    )
+                )
+            }
+
+            // 8. General accomplishments, gratitude, and improvements
+            blocks.add(
+                Block(
+                    id = UUID.randomUUID().toString(),
+                    type = BlockType.HEADER_2,
+                    text = "🏆 What did I accomplish today?",
+                )
+            )
+            blocks.add(
+                Block(
+                    id = UUID.randomUUID().toString(),
+                    type = BlockType.BULLETED_LIST_ITEM,
+                    text = "",
+                )
+            )
+            blocks.add(
+                Block(
+                    id = UUID.randomUUID().toString(),
+                    type = BlockType.HEADER_2,
+                    text = "🙏 What am I grateful for?",
+                )
+            )
+            blocks.add(
+                Block(
+                    id = UUID.randomUUID().toString(),
+                    type = BlockType.BULLETED_LIST_ITEM,
+                    text = "",
+                )
+            )
+            blocks.add(
+                Block(
+                    id = UUID.randomUUID().toString(),
+                    type = BlockType.HEADER_2,
+                    text = "📈 How can I improve tomorrow?",
+                )
+            )
+            blocks.add(
+                Block(
+                    id = UUID.randomUUID().toString(),
+                    type = BlockType.BULLETED_LIST_ITEM,
+                    text = "",
+                )
+            )
 
             val newNote =
                 Note(
