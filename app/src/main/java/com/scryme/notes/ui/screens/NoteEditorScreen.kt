@@ -1185,7 +1185,7 @@ fun BlockEditorItem(
                             BlockType.TODO_LIST_ITEM -> Modifier.padding(start = 8.dp, end = 4.dp)
                             BlockType.CALLOUT ->
                                 Modifier
-                                    .background(Color(0xFFF1F5F9), RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
                                     .padding(12.dp)
                             BlockType.QUOTE ->
                                 Modifier

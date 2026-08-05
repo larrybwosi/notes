@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -26,7 +27,9 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -63,6 +67,7 @@ fun WorkspaceScreen(
     val activeNote by viewModel.activeNote.collectAsState()
     val expandedNoteIds by viewModel.expandedNoteIds.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    var archivedExpanded by remember { mutableStateOf(false) }
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val pinnedNotes =
@@ -71,21 +76,32 @@ fun WorkspaceScreen(
             prefs.getStringSet("pinned_notes", emptySet()) ?: emptySet()
         }
 
+    val archivedNotesSet =
+        remember(allNotes) {
+            val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+            prefs.getStringSet("archived_notes", emptySet()) ?: emptySet()
+        }
+
     // Group notes into tree hierarchy
     val rootNotes =
-        remember(allNotes, searchQuery, pinnedNotes) {
-            val roots = allNotes.filter { it.parentId == null }
+        remember(allNotes, searchQuery, pinnedNotes, archivedNotesSet) {
+            val roots = allNotes.filter { it.parentId == null && !archivedNotesSet.contains(it.id) }
             val filtered =
                 if (searchQuery.isBlank()) {
                     roots
                 } else {
                     // If searching, flat filter list of matching notes
-                    allNotes.filter { it.title.contains(searchQuery, ignoreCase = true) }
+                    allNotes.filter { it.title.contains(searchQuery, ignoreCase = true) && !archivedNotesSet.contains(it.id) }
                 }
             filtered.sortedWith(
                 compareByDescending<com.scryme.notes.domain.model.Note> { pinnedNotes.contains(it.id) }
                     .thenByDescending { it.updatedAt },
             )
+        }
+
+    val archivedNotes =
+        remember(allNotes, archivedNotesSet) {
+            allNotes.filter { archivedNotesSet.contains(it.id) }
         }
 
     Column(
@@ -239,6 +255,138 @@ fun WorkspaceScreen(
                     searchActive = searchQuery.isNotBlank(),
                 )
             }
+
+            if (archivedNotes.isNotEmpty()) {
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), modifier = Modifier.padding(horizontal = 16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { archivedExpanded = !archivedExpanded }
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = if (archivedExpanded) Icons.Default.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = "Toggle Archived",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "ARCHIVED",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = "${archivedNotes.size}",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                        )
+                    }
+                }
+
+                if (archivedExpanded) {
+                    items(archivedNotes, key = { "archived_${it.id}" }) { note ->
+                        ArchivedNoteItem(
+                            note = note,
+                            activeNote = activeNote,
+                            onNoteClick = {
+                                viewModel.selectNote(it.id)
+                                onNoteSelected(it)
+                            },
+                            onDelete = { viewModel.deleteNote(it.id) },
+                            onUnarchive = {
+                                val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                                val archivedSet = (prefs.getStringSet("archived_notes", emptySet()) ?: emptySet()).toMutableSet()
+                                archivedSet.remove(note.id)
+                                prefs.edit().putStringSet("archived_notes", archivedSet).apply()
+                                android.widget.Toast.makeText(context, "Note Unarchived", android.widget.Toast.LENGTH_SHORT).show()
+                                viewModel.loadAllNotes()
+                            },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ArchivedNoteItem(
+    note: Note,
+    activeNote: Note?,
+    onNoteClick: (Note) -> Unit,
+    onDelete: (Note) -> Unit,
+    onUnarchive: () -> Unit,
+) {
+    val isSelected = activeNote?.id == note.id
+
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 12.dp, end = 8.dp)
+                .background(
+                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else Color.Transparent,
+                    shape = RoundedCornerShape(8.dp),
+                )
+                .clickable { onNoteClick(note) }
+                .padding(vertical = 6.dp, horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Archive,
+            contentDescription = "Archived Page",
+            modifier = Modifier.size(16.dp),
+            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            text = if (note.title.isBlank()) "Untitled" else note.title,
+            fontSize = 13.sp,
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+
+        // Unarchive (Restore) & Delete Button
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            IconButton(
+                onClick = onUnarchive,
+                modifier = Modifier.size(24.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Unarchive,
+                    contentDescription = "Unarchive note",
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            IconButton(
+                onClick = { onDelete(note) },
+                modifier = Modifier.size(24.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete page",
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                )
+            }
         }
     }
 }
@@ -258,11 +406,14 @@ fun HierarchyNode(
 ) {
     val isSelected = activeNote?.id == note.id
     val isExpanded = expandedNoteIds.contains(note.id)
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     // Find matching child notes from flat list
     val children =
         remember(allNotes, note.id) {
-            allNotes.filter { it.parentId == note.id }
+            val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+            val archivedSet = prefs.getStringSet("archived_notes", emptySet()) ?: emptySet()
+            allNotes.filter { it.parentId == note.id && !archivedSet.contains(it.id) }
         }
     val hasChildren = children.isNotEmpty()
 
@@ -307,7 +458,6 @@ fun HierarchyNode(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            val context = androidx.compose.ui.platform.LocalContext.current
             val isPinned =
                 remember(note.id) {
                     val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
