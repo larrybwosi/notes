@@ -578,7 +578,16 @@ fun NoteEditorScreen(
                     interactionSource = interactionSource,
                     indication = null,
                 ) {
-                    focusManager.clearFocus()
+                    val lastBlock = note.blocks.lastOrNull()
+                    if (lastBlock != null) {
+                        if (lastBlock.type == BlockType.PARAGRAPH && lastBlock.text.isEmpty()) {
+                            viewModel.setFocusedBlock(lastBlock.id)
+                        } else {
+                            viewModel.insertBlockAfter(lastBlock.id, BlockType.PARAGRAPH, "")
+                        }
+                    } else {
+                        focusManager.clearFocus()
+                    }
                 },
     ) {
         Column(
@@ -1129,19 +1138,21 @@ fun BlockEditorItem(
     val focusRequester = remember { FocusRequester() }
 
     var textFieldValue by remember(block.id) {
+        val dispText = if (block.text.isEmpty()) "\u200B" else block.text
         mutableStateOf(
             TextFieldValue(
-                annotatedString = RichTextTransformer.toAnnotatedString(block.text, block.inlineStyles),
-                selection = TextRange(block.text.length),
+                annotatedString = RichTextTransformer.toAnnotatedString(dispText, block.inlineStyles),
+                selection = TextRange(dispText.length),
             ),
         )
     }
 
     // Keep synchronization of external state changes (e.g. typing or format toggles)
     LaunchedEffect(block.text, block.inlineStyles) {
-        val annotated = RichTextTransformer.toAnnotatedString(block.text, block.inlineStyles)
-        if (textFieldValue.text != block.text || textFieldValue.annotatedString != annotated) {
-            val length = block.text.length
+        val dispText = if (block.text.isEmpty()) "\u200B" else block.text
+        val annotated = RichTextTransformer.toAnnotatedString(dispText, block.inlineStyles)
+        if (textFieldValue.text != dispText || textFieldValue.annotatedString != annotated) {
+            val length = dispText.length
             val newStart = textFieldValue.selection.start.coerceIn(0, length)
             val newEnd = textFieldValue.selection.end.coerceIn(0, length)
             textFieldValue =
@@ -1271,26 +1282,27 @@ fun BlockEditorItem(
                 value = textFieldValue,
                 onValueChange = { newValue ->
                     val oldText = textFieldValue.text
-                    if (newValue.text.isEmpty() && oldText.isNotEmpty()) {
+                    if (newValue.text.isEmpty() || newValue.text == "") {
                         textFieldValue = newValue
                         onTextChanged("")
                         onBackspaceOnEmpty()
                     } else if (newValue.text.contains("\n")) {
-                        val index = newValue.text.indexOf('\n')
-                        val beforeText = newValue.text.substring(0, index)
-                        val afterText = newValue.text.substring(index + 1)
+                        val cleanText = newValue.text.replace("\u200B", "")
+                        val index = cleanText.indexOf('\n')
+                        val beforeText = if (index != -1) cleanText.substring(0, index) else cleanText
+                        val afterText = if (index != -1) cleanText.substring(index + 1) else ""
 
-                        // Immediately update state to prevent flicker
+                        val dispBeforeText = if (beforeText.isEmpty()) "\u200B" else beforeText
                         textFieldValue =
                             TextFieldValue(
-                                annotatedString = RichTextTransformer.toAnnotatedString(beforeText, block.inlineStyles),
-                                selection = TextRange(beforeText.length),
+                                annotatedString = RichTextTransformer.toAnnotatedString(dispBeforeText, block.inlineStyles),
+                                selection = TextRange(dispBeforeText.length),
                             )
                         onTextChanged(beforeText)
                         onEnterPressed(afterText)
                     } else {
-                        // Check for markdown shortcuts at the start of the block
-                        val text = newValue.text
+                        // Check for markdown shortcuts at the start of the block, ignoring zero-width space
+                        val text = newValue.text.replace("\u200B", "")
                         var matchedShortcut = false
                         var targetType: BlockType? = null
                         var prefixLength = 0
@@ -1327,22 +1339,31 @@ fun BlockEditorItem(
 
                         if (matchedShortcut && targetType != null) {
                             val remainingText = text.substring(prefixLength)
-                            val newAnnotated = RichTextTransformer.toAnnotatedString(remainingText, emptyList())
+                            val dispRemainingText = if (remainingText.isEmpty()) "\u200B" else remainingText
+                            val newAnnotated = RichTextTransformer.toAnnotatedString(dispRemainingText, emptyList())
                             textFieldValue =
                                 TextFieldValue(
                                     annotatedString = newAnnotated,
-                                    selection = TextRange(remainingText.length),
+                                    selection = TextRange(dispRemainingText.length),
                                 )
                             onTextChanged(remainingText)
                             onChangeType(targetType)
                         } else {
-                            textFieldValue = newValue
+                            val cleanNewText =
+                                if (newValue.text.length > 1 && newValue.text.contains("\u200B")) {
+                                    newValue.text.replace("\u200B", "")
+                                } else {
+                                    newValue.text
+                                }
+                            textFieldValue = newValue.copy(text = cleanNewText)
                             // Callback to trigger text updates
-                            if (newValue.text != oldText) {
-                                onTextChanged(newValue.text)
+                            val oldCleanText = oldText.replace("\u200B", "")
+                            val newCleanText = cleanNewText.replace("\u200B", "")
+                            if (newCleanText != oldCleanText) {
+                                onTextChanged(newCleanText)
 
                                 // Check if typed slash command "/"
-                                if (newValue.text.endsWith("/")) {
+                                if (newCleanText.endsWith("/")) {
                                     showSlashMenu = true
                                 } else {
                                     showSlashMenu = false
@@ -1363,19 +1384,27 @@ fun BlockEditorItem(
                             if (keyEvent.type == KeyEventType.KeyDown) {
                                 if (keyEvent.key == Key.Enter) {
                                     val selStart = textFieldValue.selection.start
-                                    val text = textFieldValue.text
-                                    val beforeText = text.substring(0, selStart)
-                                    val afterText = text.substring(selStart)
+                                    val text = textFieldValue.text.replace("\u200B", "")
+                                    val beforeText = if (selStart <= text.length) text.substring(0, selStart) else text
+                                    val afterText = if (selStart <= text.length) text.substring(selStart) else ""
 
+                                    val dispBeforeText = if (beforeText.isEmpty()) "\u200B" else beforeText
                                     textFieldValue =
                                         TextFieldValue(
-                                            annotatedString = RichTextTransformer.toAnnotatedString(beforeText, block.inlineStyles),
-                                            selection = TextRange(beforeText.length),
+                                            annotatedString = RichTextTransformer.toAnnotatedString(dispBeforeText, block.inlineStyles),
+                                            selection = TextRange(dispBeforeText.length),
                                         )
                                     onTextChanged(beforeText)
                                     onEnterPressed(afterText)
                                     true
-                                } else if (keyEvent.key == Key.Backspace && (textFieldValue.text.isEmpty() || (textFieldValue.selection.start == 0 && textFieldValue.selection.end == 0))) {
+                                } else if (keyEvent.key == Key.Backspace &&
+                                    (
+                                        textFieldValue.text.isEmpty() ||
+                                            textFieldValue.text == "\u200B" ||
+                                            (textFieldValue.selection.start == 0 && textFieldValue.selection.end == 0) ||
+                                            (textFieldValue.text.startsWith("\u200B") && textFieldValue.selection.start <= 1 && textFieldValue.selection.end <= 1)
+                                    )
+                                ) {
                                     onBackspaceOnEmpty()
                                     true
                                 } else {
@@ -1387,7 +1416,7 @@ fun BlockEditorItem(
                         },
                 decorationBox = { innerTextField ->
                     Box(modifier = Modifier.fillMaxWidth()) {
-                        if (isFocused && textFieldValue.text.isEmpty()) {
+                        if (isFocused && (textFieldValue.text.isEmpty() || textFieldValue.text == "\u200B")) {
                             Text(
                                 text = getPlaceholderText(block.type),
                                 style = textStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)),

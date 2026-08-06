@@ -354,6 +354,34 @@ class NoteViewModelTest {
             // Assert: Reminders list should be empty
             assertEquals(0, viewModel.getNoteReminders(noteId).size)
         }
+
+    @Test
+    fun testMergeBlockWithPrevious_CorrectlyMerges() =
+        runTest {
+            // Arrange: create note with two blocks
+            viewModel.createRootNote("Page")
+            testDispatcher.scheduler.advanceUntilIdle()
+            val note = viewModel.activeNote.value!!
+            val firstBlockId = note.blocks[0].id
+
+            viewModel.updateBlockText(firstBlockId, "Hello ")
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            viewModel.insertBlockAfter(firstBlockId, BlockType.PARAGRAPH, "World")
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val secondBlockId = viewModel.activeNote.value!!.blocks[1].id
+
+            // Act: merge second block with previous
+            viewModel.mergeBlockWithPrevious(secondBlockId)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            // Assert: only one block exists with merged text "Hello World"
+            val active = viewModel.activeNote.value
+            assertNotNull(active)
+            assertEquals(1, active!!.blocks.size)
+            assertEquals("Hello World", active.blocks[0].text)
+        }
 }
 
 class FakeSharedPreferences : android.content.SharedPreferences {
