@@ -91,7 +91,13 @@ fun WorkspaceScreen(
                     roots
                 } else {
                     // If searching, flat filter list of matching notes
-                    allNotes.filter { it.title.contains(searchQuery, ignoreCase = true) && !archivedNotesSet.contains(it.id) }
+                    allNotes.filter { note ->
+                        (
+                            note.title.contains(searchQuery, ignoreCase = true) ||
+                                note.tags.any { it.contains(searchQuery, ignoreCase = true) }
+                        ) &&
+                            !archivedNotesSet.contains(note.id)
+                    }
                 }
             filtered.sortedWith(
                 compareByDescending<com.scryme.notes.domain.model.Note> { pinnedNotes.contains(it.id) }

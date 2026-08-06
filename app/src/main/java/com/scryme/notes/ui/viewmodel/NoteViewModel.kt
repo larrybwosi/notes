@@ -931,6 +931,48 @@ class NoteViewModel(
         saveNoteDynamically(updated)
     }
 
+    private val backgroundStyles =
+        setOf(
+            StyleType.BACKGROUND_COLOR_YELLOW,
+            StyleType.BACKGROUND_COLOR_LIGHT_GRAY,
+            StyleType.BACKGROUND_COLOR_GREEN,
+            StyleType.BACKGROUND_COLOR_BLUE,
+            StyleType.BACKGROUND_COLOR_RED,
+            StyleType.BACKGROUND_COLOR_PURPLE,
+            StyleType.BACKGROUND_COLOR_ORANGE,
+        )
+
+    private fun clearStylesFromRange(
+        block: Block,
+        stylesToClear: Set<StyleType>,
+        start: Int,
+        end: Int,
+    ): List<InlineStyleSpan> {
+        var currentStyles = block.inlineStyles
+        for (style in stylesToClear) {
+            val nonOverlapping = currentStyles.filter { it.styleType != style }
+            val overlappingOfThisStyle = currentStyles.filter { it.styleType == style }
+
+            val splitSpans =
+                overlappingOfThisStyle.flatMap { span ->
+                    if (span.end <= start || span.start >= end) {
+                        listOf(span)
+                    } else {
+                        val split = mutableListOf<InlineStyleSpan>()
+                        if (span.start < start) {
+                            split.add(InlineStyleSpan(style, span.start, start))
+                        }
+                        if (span.end > end) {
+                            split.add(InlineStyleSpan(style, end, span.end))
+                        }
+                        split
+                    }
+                }
+            currentStyles = nonOverlapping + splitSpans
+        }
+        return currentStyles
+    }
+
     fun applyStyleToSelection(
         blockId: String,
         styleType: StyleType,
@@ -948,8 +990,18 @@ class NoteViewModel(
                     val sEnd = end.coerceIn(0, textLength)
                     if (sStart >= sEnd) return@map block
 
-                    val sameTypeSpans = block.inlineStyles.filter { it.styleType == styleType }.toMutableList()
-                    val otherTypeSpans = block.inlineStyles.filter { it.styleType != styleType }
+                    // If we are applying a background style, clear other background styles first
+                    val blockWithCleanedBackgrounds =
+                        if (styleType in backgroundStyles) {
+                            val otherBackgrounds = backgroundStyles - styleType
+                            val cleanedSpans = clearStylesFromRange(block, otherBackgrounds, sStart, sEnd)
+                            block.copy(inlineStyles = cleanedSpans)
+                        } else {
+                            block
+                        }
+
+                    val sameTypeSpans = blockWithCleanedBackgrounds.inlineStyles.filter { it.styleType == styleType }.toMutableList()
+                    val otherTypeSpans = blockWithCleanedBackgrounds.inlineStyles.filter { it.styleType != styleType }
 
                     // Check if [sStart, sEnd) is fully covered by sameTypeSpans
                     val isFullyCovered =
@@ -997,7 +1049,7 @@ class NoteViewModel(
                             result
                         }
 
-                    block.copy(inlineStyles = otherTypeSpans + newSameTypeSpans)
+                    blockWithCleanedBackgrounds.copy(inlineStyles = otherTypeSpans + newSameTypeSpans)
                 } else {
                     block
                 }
@@ -1010,6 +1062,150 @@ class NoteViewModel(
             )
         _activeNote.value = updated
         saveNoteDynamically(updated)
+    }
+
+    fun clearBackgroundStylesFromSelection(
+        blockId: String,
+        start: Int,
+        end: Int,
+    ) {
+        val current = _activeNote.value ?: return
+        if (start >= end) return
+
+        val updatedBlocks =
+            current.blocks.map { block ->
+                if (block.id == blockId) {
+                    val textLength = block.text.length
+                    val sStart = start.coerceIn(0, textLength)
+                    val sEnd = end.coerceIn(0, textLength)
+                    if (sStart >= sEnd) return@map block
+
+                    val cleanedSpans = clearStylesFromRange(block, backgroundStyles, sStart, sEnd)
+                    block.copy(inlineStyles = cleanedSpans)
+                } else {
+                    block
+                }
+            }
+
+        val updated =
+            current.copy(
+                blocks = updatedBlocks,
+                updatedAt = System.currentTimeMillis(),
+            )
+        _activeNote.value = updated
+        saveNoteDynamically(updated)
+    }
+
+    fun addTagToNote(
+        noteId: String,
+        tag: String,
+    ) {
+        viewModelScope.launch {
+            val note = repository.getNote(noteId) ?: return@launch
+            if (!note.tags.contains(tag)) {
+                val updated =
+                    note.copy(
+                        tags = note.tags + tag,
+                        updatedAt = System.currentTimeMillis(),
+                    )
+                repository.saveNote(updated)
+                loadAllNotes()
+                // Also update activeNote if currently selected
+                if (_activeNote.value?.id == noteId) {
+                    _activeNote.value = updated
+                }
+            }
+        }
+    }
+
+    fun removeTagFromNote(
+        noteId: String,
+        tag: String,
+    ) {
+        viewModelScope.launch {
+            val note = repository.getNote(noteId) ?: return@launch
+            if (note.tags.contains(tag)) {
+                val updated =
+                    note.copy(
+                        tags = note.tags - tag,
+                        updatedAt = System.currentTimeMillis(),
+                    )
+                repository.saveNote(updated)
+                loadAllNotes()
+                // Also update activeNote if currently selected
+                if (_activeNote.value?.id == noteId) {
+                    _activeNote.value = updated
+                }
+            }
+        }
+    }
+
+    fun createNoteFromPdf(
+        title: String,
+        pdfText: String,
+    ) {
+        viewModelScope.launch {
+            val newId = UUID.randomUUID().toString()
+            val paragraphs =
+                pdfText.split("\n")
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+
+            val blocks =
+                if (paragraphs.isEmpty()) {
+                    listOf(Block(id = UUID.randomUUID().toString(), type = BlockType.PARAGRAPH, text = ""))
+                } else {
+                    paragraphs.map { paraText ->
+                        Block(
+                            id = UUID.randomUUID().toString(),
+                            type = BlockType.PARAGRAPH,
+                            text = paraText,
+                        )
+                    }
+                }
+
+            val newNote =
+                Note(
+                    id = newId,
+                    title = title,
+                    blocks = blocks,
+                    parentId = null,
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis(),
+                )
+            repository.saveNote(newNote)
+            loadAllNotes()
+            selectNote(newId)
+        }
+    }
+
+    fun appendPdfTextToActiveNote(pdfText: String) {
+        val current = _activeNote.value ?: return
+        viewModelScope.launch {
+            val paragraphs =
+                pdfText.split("\n")
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+            if (paragraphs.isEmpty()) return@launch
+
+            val newBlocks =
+                paragraphs.map { paraText ->
+                    Block(
+                        id = UUID.randomUUID().toString(),
+                        type = BlockType.PARAGRAPH,
+                        text = paraText,
+                    )
+                }
+
+            val updated =
+                current.copy(
+                    blocks = current.blocks + newBlocks,
+                    updatedAt = System.currentTimeMillis(),
+                )
+            repository.saveNote(updated)
+            loadAllNotes()
+            _activeNote.value = updated
+        }
     }
 
     private fun saveNoteDynamically(note: Note) {

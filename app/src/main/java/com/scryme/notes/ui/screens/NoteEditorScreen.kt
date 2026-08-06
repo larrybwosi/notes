@@ -99,6 +99,19 @@ fun NoteEditorScreen(
 
     if (activeNote == null) {
         val context = androidx.compose.ui.platform.LocalContext.current
+
+        val pdfLauncherHome =
+            rememberLauncherForActivityResult(
+                contract = androidx.activity.result.contract.ActivityResultContracts.GetContent(),
+            ) { uri: android.net.Uri? ->
+                if (uri != null) {
+                    val pdfText = com.scryme.notes.ui.utils.PdfHelper.extractText(context, uri)
+                    val fileName = getFileInfoFromUri(context, uri).first.removeSuffix(".pdf")
+                    viewModel.createNoteFromPdf(fileName, pdfText)
+                    android.widget.Toast.makeText(context, "PDF imported successfully!", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+
         var selectedLabelFilter by remember { mutableStateOf("All") }
         var showSortMenu by remember { mutableStateOf(false) }
         var selectedSortOption by remember { mutableStateOf("Updated") } // "Updated", "Title", "Created"
@@ -115,12 +128,16 @@ fun NoteEditorScreen(
                         if (selectedLabelFilter == "All") {
                             true
                         } else {
-                            val noteLabel =
-                                prefs.getString("label_note_${note.id}", null) ?: run {
-                                    val tags = listOf("Random", "Work", "Goals", "Personal", "Journal")
-                                    tags[kotlin.math.abs(note.id.hashCode()) % tags.size]
-                                }
-                            noteLabel.equals(selectedLabelFilter, ignoreCase = true)
+                            if (note.tags.any { it.equals(selectedLabelFilter, ignoreCase = true) }) {
+                                true
+                            } else {
+                                val noteLabel =
+                                    prefs.getString("label_note_${note.id}", null) ?: run {
+                                        val tags = listOf("Random", "Work", "Goals", "Personal", "Journal")
+                                        tags[kotlin.math.abs(note.id.hashCode()) % tags.size]
+                                    }
+                                noteLabel.equals(selectedLabelFilter, ignoreCase = true)
+                            }
                         }
                     }
 
@@ -297,6 +314,85 @@ fun NoteEditorScreen(
                         imageVector = Icons.Default.ChevronRight,
                         contentDescription = "Go",
                         tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Premium Import PDF Card
+            Card(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { pdfLauncherHome.launch("application/pdf") },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.15f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                border =
+                    androidx.compose.foundation.BorderStroke(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.25f),
+                    ),
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .size(44.dp)
+                                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PictureAsPdf,
+                            contentDescription = "PDF Icon",
+                            tint = MaterialTheme.colorScheme.secondary,
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Import PDF to Note",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.secondary,
+                                fontFamily = selectedFontFamily,
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            // Premium Badge
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .background(MaterialTheme.colorScheme.secondary, RoundedCornerShape(50))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                            ) {
+                                Text(
+                                    text = "PDF",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSecondary,
+                                    letterSpacing = 0.5.sp,
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Instantly convert any PDF document on your device into a rich-text page.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
+                            fontFamily = selectedFontFamily,
+                            lineHeight = 16.sp,
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = "Go",
+                        tint = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -672,6 +768,167 @@ fun NoteEditorScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            var showAddTagDialog by remember { mutableStateOf(false) }
+            var newTagInput by remember { mutableStateOf("") }
+
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .horizontalScroll(rememberScrollState()),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Label,
+                    contentDescription = "Tags",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.size(16.dp),
+                )
+
+                note.tags.forEach { tag ->
+                    Row(
+                        modifier =
+                            Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                                    shape = RoundedCornerShape(8.dp),
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = tag,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontFamily = selectedFontFamily,
+                        )
+                        IconButton(
+                            onClick = { viewModel.removeTagFromNote(note.id, tag) },
+                            modifier = Modifier.size(14.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Remove tag",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                                modifier = Modifier.size(10.dp),
+                            )
+                        }
+                    }
+                }
+
+                // Add Tag Button
+                Row(
+                    modifier =
+                        Modifier
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                shape = RoundedCornerShape(8.dp),
+                            )
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(8.dp),
+                            )
+                            .clickable {
+                                newTagInput = ""
+                                showAddTagDialog = true
+                            }
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add Tag",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(12.dp),
+                    )
+                    Text(
+                        text = "Add Tag",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontFamily = selectedFontFamily,
+                    )
+                }
+            }
+
+            if (showAddTagDialog) {
+                AlertDialog(
+                    onDismissRequest = { showAddTagDialog = false },
+                    title = { Text("Add Tag", fontFamily = selectedFontFamily, fontWeight = FontWeight.Bold) },
+                    text = {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text("Type a new tag or choose a suggestion:", fontSize = 13.sp, fontFamily = selectedFontFamily)
+                            OutlinedTextField(
+                                value = newTagInput,
+                                onValueChange = { newTagInput = it },
+                                placeholder = { Text("Enter tag name...") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+
+                            Text("Suggestions:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                val suggestions = listOf("Work", "Personal", "Goals", "Journal", "Random", "Urgent", "Reference")
+                                suggestions.forEach { suggestion ->
+                                    Box(
+                                        modifier =
+                                            Modifier
+                                                .background(
+                                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+                                                    shape = RoundedCornerShape(6.dp),
+                                                )
+                                                .clickable {
+                                                    viewModel.addTagToNote(note.id, suggestion)
+                                                    showAddTagDialog = false
+                                                }
+                                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    ) {
+                                        Text(
+                                            text = suggestion,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            fontFamily = selectedFontFamily,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                if (newTagInput.isNotBlank()) {
+                                    viewModel.addTagToNote(note.id, newTagInput.trim())
+                                }
+                                showAddTagDialog = false
+                            },
+                        ) {
+                            Text("Add", fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showAddTagDialog = false }) {
+                            Text("Cancel")
+                        }
+                    },
+                )
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             // Nested Sub-Pages listing
@@ -785,6 +1042,9 @@ fun NoteEditorScreen(
                         },
                         onApplyStyle = { styleType, start, end ->
                             viewModel.applyStyleToSelection(block.id, styleType, start, end)
+                        },
+                        onClearHighlights = { start, end ->
+                            viewModel.clearBackgroundStylesFromSelection(block.id, start, end)
                         },
                         onDeleteBlock = {
                             viewModel.deleteBlock(block.id)
@@ -1056,33 +1316,68 @@ fun NoteEditorScreen(
 
                         VerticalDivider(modifier = Modifier.height(24.dp))
 
-                        // Highlights/Backgrounds
-                        IconButton(
-                            onClick = {
-                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BACKGROUND_COLOR_YELLOW, start, end)
-                            },
-                            modifier = Modifier.size(36.dp),
-                        ) {
-                            Icon(
-                                Icons.Default.Highlight,
-                                "Yellow Highlight",
-                                modifier = Modifier.size(18.dp),
-                                tint = Color(0xFFFFF9C4),
-                            )
-                        }
+                        // Highlights/Backgrounds with Dropdown Palette
+                        var showHighlightMenuBottom by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(
+                                onClick = { showHighlightMenuBottom = true },
+                                modifier = Modifier.size(36.dp),
+                            ) {
+                                Icon(
+                                    Icons.Default.Highlight,
+                                    "Highlight Color",
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
+                            }
 
-                        IconButton(
-                            onClick = {
-                                viewModel.applyStyleToSelection(focusedBlock.id, StyleType.BACKGROUND_COLOR_LIGHT_GRAY, start, end)
-                            },
-                            modifier = Modifier.size(36.dp),
-                        ) {
-                            Icon(
-                                Icons.Default.FormatColorFill,
-                                "Light Gray Bg",
-                                modifier = Modifier.size(18.dp),
-                                tint = Color(0xFFEEEEEE),
-                            )
+                            DropdownMenu(
+                                expanded = showHighlightMenuBottom,
+                                onDismissRequest = { showHighlightMenuBottom = false },
+                            ) {
+                                val colorsList =
+                                    listOf(
+                                        Triple("Yellow", StyleType.BACKGROUND_COLOR_YELLOW, Color(0xFFFFF9C4)),
+                                        Triple("Light Gray", StyleType.BACKGROUND_COLOR_LIGHT_GRAY, Color(0xFFEEEEEE)),
+                                        Triple("Green", StyleType.BACKGROUND_COLOR_GREEN, Color(0xFFC8E6C9)),
+                                        Triple("Blue", StyleType.BACKGROUND_COLOR_BLUE, Color(0xFFBBDEFB)),
+                                        Triple("Red", StyleType.BACKGROUND_COLOR_RED, Color(0xFFFFCDD2)),
+                                        Triple("Purple", StyleType.BACKGROUND_COLOR_PURPLE, Color(0xFFE1BEE7)),
+                                        Triple("Orange", StyleType.BACKGROUND_COLOR_ORANGE, Color(0xFFFFE0B2)),
+                                    )
+                                colorsList.forEach { (label, style, previewColor) ->
+                                    DropdownMenuItem(
+                                        text = { Text(label, fontFamily = selectedFontFamily) },
+                                        leadingIcon = {
+                                            Box(
+                                                modifier =
+                                                    Modifier
+                                                        .size(18.dp)
+                                                        .background(previewColor, RoundedCornerShape(4.dp))
+                                                        .border(1.dp, Color.Gray.copy(alpha = 0.5f), RoundedCornerShape(4.dp)),
+                                            )
+                                        },
+                                        onClick = {
+                                            viewModel.applyStyleToSelection(focusedBlock.id, style, start, end)
+                                            showHighlightMenuBottom = false
+                                        },
+                                    )
+                                }
+                                DropdownMenuItem(
+                                    text = { Text("Clear Highlight", fontFamily = selectedFontFamily) },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.FormatColorReset,
+                                            contentDescription = "Clear Highlight",
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                    },
+                                    onClick = {
+                                        viewModel.clearBackgroundStylesFromSelection(focusedBlock.id, start, end)
+                                        showHighlightMenuBottom = false
+                                    },
+                                )
+                            }
                         }
 
                         VerticalDivider(modifier = Modifier.height(24.dp))
@@ -1128,6 +1423,7 @@ fun BlockEditorItem(
     onToggleTodo: () -> Unit,
     onChangeType: (BlockType) -> Unit,
     onApplyStyle: (StyleType, Int, Int) -> Unit,
+    onClearHighlights: (Int, Int) -> Unit = { _, _ -> },
     onDeleteBlock: () -> Unit,
     onSelectionChanged: (TextRange) -> Unit,
     sequenceNumber: Int = 1,
@@ -1577,29 +1873,61 @@ fun BlockEditorItem(
                         ) {
                             Icon(Icons.Default.FormatStrikethrough, "Strikethrough", modifier = Modifier.size(16.dp))
                         }
-                        IconButton(
-                            onClick = {
-                                onApplyStyle(
-                                    StyleType.BACKGROUND_COLOR_YELLOW,
-                                    textFieldValue.selection.start,
-                                    textFieldValue.selection.end,
+                        var showHighlightMenuFloating by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(
+                                onClick = { showHighlightMenuFloating = true },
+                                modifier = Modifier.size(32.dp),
+                            ) {
+                                Icon(Icons.Default.Highlight, "Highlight", modifier = Modifier.size(16.dp))
+                            }
+                            DropdownMenu(
+                                expanded = showHighlightMenuFloating,
+                                onDismissRequest = { showHighlightMenuFloating = false },
+                            ) {
+                                val colorsList =
+                                    listOf(
+                                        Triple("Yellow", StyleType.BACKGROUND_COLOR_YELLOW, Color(0xFFFFF9C4)),
+                                        Triple("Light Gray", StyleType.BACKGROUND_COLOR_LIGHT_GRAY, Color(0xFFEEEEEE)),
+                                        Triple("Green", StyleType.BACKGROUND_COLOR_GREEN, Color(0xFFC8E6C9)),
+                                        Triple("Blue", StyleType.BACKGROUND_COLOR_BLUE, Color(0xFFBBDEFB)),
+                                        Triple("Red", StyleType.BACKGROUND_COLOR_RED, Color(0xFFFFCDD2)),
+                                        Triple("Purple", StyleType.BACKGROUND_COLOR_PURPLE, Color(0xFFE1BEE7)),
+                                        Triple("Orange", StyleType.BACKGROUND_COLOR_ORANGE, Color(0xFFFFE0B2)),
+                                    )
+                                colorsList.forEach { (label, style, previewColor) ->
+                                    DropdownMenuItem(
+                                        text = { Text(label, fontFamily = selectedFontFamily) },
+                                        leadingIcon = {
+                                            Box(
+                                                modifier =
+                                                    Modifier
+                                                        .size(18.dp)
+                                                        .background(previewColor, RoundedCornerShape(4.dp))
+                                                        .border(1.dp, Color.Gray.copy(alpha = 0.5f), RoundedCornerShape(4.dp)),
+                                            )
+                                        },
+                                        onClick = {
+                                            onApplyStyle(style, textFieldValue.selection.start, textFieldValue.selection.end)
+                                            showHighlightMenuFloating = false
+                                        },
+                                    )
+                                }
+                                DropdownMenuItem(
+                                    text = { Text("Clear Highlight", fontFamily = selectedFontFamily) },
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.FormatColorReset,
+                                            contentDescription = "Clear Highlight",
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                    },
+                                    onClick = {
+                                        onClearHighlights(textFieldValue.selection.start, textFieldValue.selection.end)
+                                        showHighlightMenuFloating = false
+                                    },
                                 )
-                            },
-                            modifier = Modifier.size(32.dp),
-                        ) {
-                            Icon(Icons.Default.Highlight, "Yellow Highlight", modifier = Modifier.size(16.dp), tint = Color(0xFFFFF9C4))
-                        }
-                        IconButton(
-                            onClick = {
-                                onApplyStyle(
-                                    StyleType.BACKGROUND_COLOR_LIGHT_GRAY,
-                                    textFieldValue.selection.start,
-                                    textFieldValue.selection.end,
-                                )
-                            },
-                            modifier = Modifier.size(32.dp),
-                        ) {
-                            Icon(Icons.Default.FormatColorFill, "Light Gray Bg", modifier = Modifier.size(16.dp), tint = Color(0xFFEEEEEE))
+                            }
                         }
                     }
                 }
@@ -1818,6 +2146,33 @@ fun NoteGridCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+
+            if (note.tags.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    note.tags.forEach { tag ->
+                        Box(
+                            modifier =
+                                Modifier
+                                    .background(
+                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                        shape = RoundedCornerShape(4.dp),
+                                    )
+                                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                        ) {
+                            Text(
+                                text = tag,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(6.dp))
 

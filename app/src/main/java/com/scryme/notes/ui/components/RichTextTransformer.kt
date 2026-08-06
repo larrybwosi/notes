@@ -48,6 +48,11 @@ object RichTextTransformer {
             StyleType.TEXT_COLOR_GREEN -> SpanStyle(color = Color(0xFF2E7D32))
             StyleType.BACKGROUND_COLOR_YELLOW -> SpanStyle(background = Color(0xFFFFF9C4))
             StyleType.BACKGROUND_COLOR_LIGHT_GRAY -> SpanStyle(background = Color(0xFFEEEEEE))
+            StyleType.BACKGROUND_COLOR_GREEN -> SpanStyle(background = Color(0xFFC8E6C9))
+            StyleType.BACKGROUND_COLOR_BLUE -> SpanStyle(background = Color(0xFFBBDEFB))
+            StyleType.BACKGROUND_COLOR_RED -> SpanStyle(background = Color(0xFFFFCDD2))
+            StyleType.BACKGROUND_COLOR_PURPLE -> SpanStyle(background = Color(0xFFE1BEE7))
+            StyleType.BACKGROUND_COLOR_ORANGE -> SpanStyle(background = Color(0xFFFFE0B2))
         }
     }
 }
