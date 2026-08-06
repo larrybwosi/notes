@@ -57,6 +57,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        try {
+            com.tom_roush.pdfbox.android.PDFBoxResourceLoader.init(applicationContext)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         lifecycleScope.launch {
             UpdateChecker.checkForUpdates(applicationContext)
         }
@@ -341,6 +347,19 @@ fun BottomSheetContent(
     onDuplicateNote: () -> Unit,
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
+
+    val pdfImportLauncher =
+        androidx.activity.compose.rememberLauncherForActivityResult(
+            contract = androidx.activity.result.contract.ActivityResultContracts.GetContent(),
+        ) { uri: android.net.Uri? ->
+            if (uri != null) {
+                val pdfText = com.scryme.notes.ui.utils.PdfHelper.extractText(context, uri)
+                viewModel.appendPdfTextToActiveNote(pdfText)
+                android.widget.Toast.makeText(context, "PDF text imported!", android.widget.Toast.LENGTH_SHORT).show()
+                onDismiss()
+            }
+        }
+
     var showReminderDialog by remember { mutableStateOf(false) }
     var showAddImageDialog by remember { mutableStateOf(false) }
     var showVoiceRecorderDialog by remember { mutableStateOf(false) }
@@ -1025,6 +1044,7 @@ fun BottomSheetContent(
                 Triple("Add Thumbnail", Icons.Default.AddPhotoAlternate, { showAddThumbnailDialog = true }),
                 Triple("Label", Icons.Default.Label, { showLabelSelectorDialog = true }),
                 Triple("Send", Icons.Default.Send, { onSend() }),
+                Triple("Import PDF Text", Icons.Default.PictureAsPdf, { pdfImportLauncher.launch("application/pdf") }),
                 Triple("Make a Copy", Icons.Default.ContentCopy, onDuplicateNote),
                 Triple(if (isLocked) "Unlock Note" else "Lock Note", Icons.Default.Lock, { onToggleLock() }),
                 Triple(if (isArchived) "Unarchive Note" else "Archive Note", if (isArchived) Icons.Default.Unarchive else Icons.Default.Archive, { onToggleArchive() }),

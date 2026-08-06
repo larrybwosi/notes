@@ -14,4 +14,5 @@ data class Note(
     val updatedAt: Long,
     // For ordering sibling notes
     val order: Int = 0,
+    val tags: List<String> = emptyList(),
 )

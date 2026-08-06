@@ -99,6 +99,10 @@ dependencies {
 
     // Gson
     implementation(libs.gson)
+
+    // PDF text extraction
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)

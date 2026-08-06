@@ -37,6 +37,7 @@ data class NoteEntity(
     val createdAt: Long,
     val updatedAt: Long,
     val orderIndex: Int,
+    val tags: List<String> = emptyList(),
 ) {
     fun toDomain(): Note {
         return Note(
@@ -47,6 +48,7 @@ data class NoteEntity(
             createdAt = createdAt,
             updatedAt = updatedAt,
             order = orderIndex,
+            tags = tags,
         )
     }
 
@@ -60,6 +62,7 @@ data class NoteEntity(
                 createdAt = note.createdAt,
                 updatedAt = note.updatedAt,
                 orderIndex = note.order,
+                tags = note.tags,
             )
         }
     }
