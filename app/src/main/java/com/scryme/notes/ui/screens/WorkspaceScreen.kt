@@ -19,8 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -245,8 +245,8 @@ fun WorkspaceScreen(
                                 blocks = emptyList(),
                                 parentId = null,
                                 createdAt = 0L,
-                                updatedAt = 0L
-                            )
+                                updatedAt = 0L,
+                            ),
                         )
                     },
             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f),

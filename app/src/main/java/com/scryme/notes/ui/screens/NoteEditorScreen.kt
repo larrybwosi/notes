@@ -1575,7 +1575,7 @@ fun BlockEditorItem(
 
             val emptyTextToolbar = remember { EmptyTextToolbar() }
             androidx.compose.runtime.CompositionLocalProvider(
-                androidx.compose.ui.platform.LocalTextToolbar provides emptyTextToolbar
+                androidx.compose.ui.platform.LocalTextToolbar provides emptyTextToolbar,
             ) {
                 // Main Core BasicTextField
                 BasicTextField(
@@ -2474,7 +2474,9 @@ fun AttachmentsSection(
 
 class EmptyTextToolbar : androidx.compose.ui.platform.TextToolbar {
     override val status: androidx.compose.ui.platform.TextToolbarStatus = androidx.compose.ui.platform.TextToolbarStatus.Hidden
+
     override fun hide() {}
+
     override fun showMenu(
         rect: androidx.compose.ui.geometry.Rect,
         onCopyRequested: (() -> Unit)?,
