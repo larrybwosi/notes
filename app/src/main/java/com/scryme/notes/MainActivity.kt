@@ -2,7 +2,9 @@ package com.scryme.notes
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
@@ -129,6 +131,31 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
     var showBottomSheet by remember { mutableStateOf(false) }
     var showSettingsPage by remember { mutableStateOf(false) }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val pdfImportActiveLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent(),
+        ) { uri: android.net.Uri? ->
+            if (uri != null) {
+                val pdfText = com.scryme.notes.ui.utils.PdfHelper.extractText(context, uri)
+                viewModel.appendPdfTextToActiveNote(pdfText)
+                android.widget.Toast.makeText(context, "PDF text imported!", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    val pdfImportHomeLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent(),
+        ) { uri: android.net.Uri? ->
+            if (uri != null) {
+                val pdfText = com.scryme.notes.ui.utils.PdfHelper.extractText(context, uri)
+                val fileName = com.scryme.notes.ui.screens.getFileInfoFromUri(context, uri).first.removeSuffix(".pdf")
+                viewModel.createNoteFromPdf(fileName, pdfText)
+                android.widget.Toast.makeText(context, "PDF imported successfully!", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
 
     val navigateBack = {
@@ -203,6 +230,18 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
                 if (activeNote != null) {
                     Spacer(modifier = Modifier.weight(1f))
 
+                    // PDF Import Button (import icon)
+                    IconButton(
+                        onClick = { pdfImportActiveLauncher.launch("application/pdf") },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FileDownload,
+                            contentDescription = "Import PDF",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
+
                     // Done checkmark action button
                     IconButton(
                         onClick = { viewModel.setFocusedBlock(null) },
@@ -239,6 +278,18 @@ fun MainScreenLayout(viewModel: NoteViewModel) {
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+
+                    // PDF Import Button (import icon)
+                    IconButton(
+                        onClick = { pdfImportHomeLauncher.launch("application/pdf") },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FileDownload,
+                            contentDescription = "Import PDF",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
                 }
             }
 

@@ -1573,155 +1573,160 @@ fun BlockEditorItem(
                     getBlockTextStyle(block.type).copy(fontFamily = if (block.type == BlockType.CODE_BLOCK) FontFamily.Monospace else selectedFontFamily)
                 }
 
-            // Main Core BasicTextField
-            BasicTextField(
-                value = textFieldValue,
-                onValueChange = { newValue ->
-                    val oldText = textFieldValue.text
-                    if (newValue.text.isEmpty() || newValue.text == "") {
-                        textFieldValue = newValue
-                        onTextChanged("")
-                        onBackspaceOnEmpty()
-                    } else if (newValue.text.contains("\n")) {
-                        val cleanText = newValue.text.replace("\u200B", "")
-                        val index = cleanText.indexOf('\n')
-                        val beforeText = if (index != -1) cleanText.substring(0, index) else cleanText
-                        val afterText = if (index != -1) cleanText.substring(index + 1) else ""
+            val emptyTextToolbar = remember { EmptyTextToolbar() }
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalTextToolbar provides emptyTextToolbar
+            ) {
+                // Main Core BasicTextField
+                BasicTextField(
+                    value = textFieldValue,
+                    onValueChange = { newValue ->
+                        val oldText = textFieldValue.text
+                        if (newValue.text.isEmpty() || newValue.text == "") {
+                            textFieldValue = newValue
+                            onTextChanged("")
+                            onBackspaceOnEmpty()
+                        } else if (newValue.text.contains("\n")) {
+                            val cleanText = newValue.text.replace("\u200B", "")
+                            val index = cleanText.indexOf('\n')
+                            val beforeText = if (index != -1) cleanText.substring(0, index) else cleanText
+                            val afterText = if (index != -1) cleanText.substring(index + 1) else ""
 
-                        val dispBeforeText = if (beforeText.isEmpty()) "\u200B" else beforeText
-                        textFieldValue =
-                            TextFieldValue(
-                                annotatedString = RichTextTransformer.toAnnotatedString(dispBeforeText, block.inlineStyles),
-                                selection = TextRange(dispBeforeText.length),
-                            )
-                        onTextChanged(beforeText)
-                        onEnterPressed(afterText)
-                    } else {
-                        // Check for markdown shortcuts at the start of the block, ignoring zero-width space
-                        val text = newValue.text.replace("\u200B", "")
-                        var matchedShortcut = false
-                        var targetType: BlockType? = null
-                        var prefixLength = 0
-
-                        if (markdownEnabled && (text.startsWith("- ") || text.startsWith("* ") || text.startsWith("• "))) {
-                            targetType = BlockType.BULLETED_LIST_ITEM
-                            prefixLength = 2
-                            matchedShortcut = true
-                        } else if (markdownEnabled && (text.startsWith("1. ") || text.startsWith("1) "))) {
-                            targetType = BlockType.NUMBERED_LIST_ITEM
-                            prefixLength = 3
-                            matchedShortcut = true
-                        } else if (markdownEnabled && (text.startsWith("[] ") || text.startsWith("[ ] "))) {
-                            targetType = BlockType.TODO_LIST_ITEM
-                            prefixLength = if (text.startsWith("[] ")) 3 else 4
-                            matchedShortcut = true
-                        } else if (markdownEnabled && text.startsWith("# ")) {
-                            targetType = BlockType.HEADER_1
-                            prefixLength = 2
-                            matchedShortcut = true
-                        } else if (markdownEnabled && text.startsWith("## ")) {
-                            targetType = BlockType.HEADER_2
-                            prefixLength = 3
-                            matchedShortcut = true
-                        } else if (markdownEnabled && text.startsWith("### ")) {
-                            targetType = BlockType.HEADER_3
-                            prefixLength = 4
-                            matchedShortcut = true
-                        } else if (markdownEnabled && text.startsWith("> ")) {
-                            targetType = BlockType.QUOTE
-                            prefixLength = 2
-                            matchedShortcut = true
-                        }
-
-                        if (matchedShortcut && targetType != null) {
-                            val remainingText = text.substring(prefixLength)
-                            val dispRemainingText = if (remainingText.isEmpty()) "\u200B" else remainingText
-                            val newAnnotated = RichTextTransformer.toAnnotatedString(dispRemainingText, emptyList())
+                            val dispBeforeText = if (beforeText.isEmpty()) "\u200B" else beforeText
                             textFieldValue =
                                 TextFieldValue(
-                                    annotatedString = newAnnotated,
-                                    selection = TextRange(dispRemainingText.length),
+                                    annotatedString = RichTextTransformer.toAnnotatedString(dispBeforeText, block.inlineStyles),
+                                    selection = TextRange(dispBeforeText.length),
                                 )
-                            onTextChanged(remainingText)
-                            onChangeType(targetType)
+                            onTextChanged(beforeText)
+                            onEnterPressed(afterText)
                         } else {
-                            val cleanNewText =
-                                if (newValue.text.length > 1 && newValue.text.contains("\u200B")) {
-                                    newValue.text.replace("\u200B", "")
-                                } else {
-                                    newValue.text
-                                }
-                            textFieldValue = newValue.copy(text = cleanNewText)
-                            // Callback to trigger text updates
-                            val oldCleanText = oldText.replace("\u200B", "")
-                            val newCleanText = cleanNewText.replace("\u200B", "")
-                            if (newCleanText != oldCleanText) {
-                                onTextChanged(newCleanText)
+                            // Check for markdown shortcuts at the start of the block, ignoring zero-width space
+                            val text = newValue.text.replace("\u200B", "")
+                            var matchedShortcut = false
+                            var targetType: BlockType? = null
+                            var prefixLength = 0
 
-                                // Check if typed slash command "/"
-                                if (newCleanText.endsWith("/")) {
-                                    showSlashMenu = true
-                                } else {
-                                    showSlashMenu = false
+                            if (markdownEnabled && (text.startsWith("- ") || text.startsWith("* ") || text.startsWith("• "))) {
+                                targetType = BlockType.BULLETED_LIST_ITEM
+                                prefixLength = 2
+                                matchedShortcut = true
+                            } else if (markdownEnabled && (text.startsWith("1. ") || text.startsWith("1) "))) {
+                                targetType = BlockType.NUMBERED_LIST_ITEM
+                                prefixLength = 3
+                                matchedShortcut = true
+                            } else if (markdownEnabled && (text.startsWith("[] ") || text.startsWith("[ ] "))) {
+                                targetType = BlockType.TODO_LIST_ITEM
+                                prefixLength = if (text.startsWith("[] ")) 3 else 4
+                                matchedShortcut = true
+                            } else if (markdownEnabled && text.startsWith("# ")) {
+                                targetType = BlockType.HEADER_1
+                                prefixLength = 2
+                                matchedShortcut = true
+                            } else if (markdownEnabled && text.startsWith("## ")) {
+                                targetType = BlockType.HEADER_2
+                                prefixLength = 3
+                                matchedShortcut = true
+                            } else if (markdownEnabled && text.startsWith("### ")) {
+                                targetType = BlockType.HEADER_3
+                                prefixLength = 4
+                                matchedShortcut = true
+                            } else if (markdownEnabled && text.startsWith("> ")) {
+                                targetType = BlockType.QUOTE
+                                prefixLength = 2
+                                matchedShortcut = true
+                            }
+
+                            if (matchedShortcut && targetType != null) {
+                                val remainingText = text.substring(prefixLength)
+                                val dispRemainingText = if (remainingText.isEmpty()) "\u200B" else remainingText
+                                val newAnnotated = RichTextTransformer.toAnnotatedString(dispRemainingText, emptyList())
+                                textFieldValue =
+                                    TextFieldValue(
+                                        annotatedString = newAnnotated,
+                                        selection = TextRange(dispRemainingText.length),
+                                    )
+                                onTextChanged(remainingText)
+                                onChangeType(targetType)
+                            } else {
+                                val cleanNewText =
+                                    if (newValue.text.length > 1 && newValue.text.contains("\u200B")) {
+                                        newValue.text.replace("\u200B", "")
+                                    } else {
+                                        newValue.text
+                                    }
+                                textFieldValue = newValue.copy(text = cleanNewText)
+                                // Callback to trigger text updates
+                                val oldCleanText = oldText.replace("\u200B", "")
+                                val newCleanText = cleanNewText.replace("\u200B", "")
+                                if (newCleanText != oldCleanText) {
+                                    onTextChanged(newCleanText)
+
+                                    // Check if typed slash command "/"
+                                    if (newCleanText.endsWith("/")) {
+                                        showSlashMenu = true
+                                    } else {
+                                        showSlashMenu = false
+                                    }
                                 }
                             }
                         }
-                    }
-                },
-                textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .focusRequester(focusRequester)
-                        .onFocusChanged { onFocusChanged(it.isFocused) }
-                        .onKeyEvent { keyEvent ->
-                            if (keyEvent.type == KeyEventType.KeyDown) {
-                                if (keyEvent.key == Key.Enter) {
-                                    val selStart = textFieldValue.selection.start
-                                    val text = textFieldValue.text.replace("\u200B", "")
-                                    val beforeText = if (selStart <= text.length) text.substring(0, selStart) else text
-                                    val afterText = if (selStart <= text.length) text.substring(selStart) else ""
+                    },
+                    textStyle = textStyle.copy(color = MaterialTheme.colorScheme.onSurface),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .focusRequester(focusRequester)
+                            .onFocusChanged { onFocusChanged(it.isFocused) }
+                            .onKeyEvent { keyEvent ->
+                                if (keyEvent.type == KeyEventType.KeyDown) {
+                                    if (keyEvent.key == Key.Enter) {
+                                        val selStart = textFieldValue.selection.start
+                                        val text = textFieldValue.text.replace("\u200B", "")
+                                        val beforeText = if (selStart <= text.length) text.substring(0, selStart) else text
+                                        val afterText = if (selStart <= text.length) text.substring(selStart) else ""
 
-                                    val dispBeforeText = if (beforeText.isEmpty()) "\u200B" else beforeText
-                                    textFieldValue =
-                                        TextFieldValue(
-                                            annotatedString = RichTextTransformer.toAnnotatedString(dispBeforeText, block.inlineStyles),
-                                            selection = TextRange(dispBeforeText.length),
+                                        val dispBeforeText = if (beforeText.isEmpty()) "\u200B" else beforeText
+                                        textFieldValue =
+                                            TextFieldValue(
+                                                annotatedString = RichTextTransformer.toAnnotatedString(dispBeforeText, block.inlineStyles),
+                                                selection = TextRange(dispBeforeText.length),
+                                            )
+                                        onTextChanged(beforeText)
+                                        onEnterPressed(afterText)
+                                        true
+                                    } else if (keyEvent.key == Key.Backspace &&
+                                        (
+                                            textFieldValue.text.isEmpty() ||
+                                                textFieldValue.text == "\u200B" ||
+                                                (textFieldValue.selection.start == 0 && textFieldValue.selection.end == 0) ||
+                                                (textFieldValue.text.startsWith("\u200B") && textFieldValue.selection.start <= 1 && textFieldValue.selection.end <= 1)
                                         )
-                                    onTextChanged(beforeText)
-                                    onEnterPressed(afterText)
-                                    true
-                                } else if (keyEvent.key == Key.Backspace &&
-                                    (
-                                        textFieldValue.text.isEmpty() ||
-                                            textFieldValue.text == "\u200B" ||
-                                            (textFieldValue.selection.start == 0 && textFieldValue.selection.end == 0) ||
-                                            (textFieldValue.text.startsWith("\u200B") && textFieldValue.selection.start <= 1 && textFieldValue.selection.end <= 1)
-                                    )
-                                ) {
-                                    onBackspaceOnEmpty()
-                                    true
+                                    ) {
+                                        onBackspaceOnEmpty()
+                                        true
+                                    } else {
+                                        false
+                                    }
                                 } else {
                                     false
                                 }
-                            } else {
-                                false
+                            },
+                    decorationBox = { innerTextField ->
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            if (isFocused && (textFieldValue.text.isEmpty() || textFieldValue.text == "\u200B")) {
+                                Text(
+                                    text = getPlaceholderText(block.type),
+                                    style = textStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)),
+                                )
                             }
-                        },
-                decorationBox = { innerTextField ->
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        if (isFocused && (textFieldValue.text.isEmpty() || textFieldValue.text == "\u200B")) {
-                            Text(
-                                text = getPlaceholderText(block.type),
-                                style = textStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)),
-                            )
+                            innerTextField()
                         }
-                        innerTextField()
-                    }
-                },
-            )
+                    },
+                )
+            }
         }
 
         // Inline Slash commands popover menu when typed "/"
@@ -2464,6 +2469,20 @@ fun AttachmentsSection(
                 }
             },
         )
+    }
+}
+
+class EmptyTextToolbar : androidx.compose.ui.platform.TextToolbar {
+    override val status: androidx.compose.ui.platform.TextToolbarStatus = androidx.compose.ui.platform.TextToolbarStatus.Hidden
+    override fun hide() {}
+    override fun showMenu(
+        rect: androidx.compose.ui.geometry.Rect,
+        onCopyRequested: (() -> Unit)?,
+        onPasteRequested: (() -> Unit)?,
+        onCutRequested: (() -> Unit)?,
+        onSelectAllRequested: (() -> Unit)?,
+    ) {
+        // Do nothing to suppress the default selection menu options
     }
 }
 
