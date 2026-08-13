@@ -287,20 +287,24 @@ class NoteViewModel(
         prefs?.edit()?.remove("note_reminders_list_$noteId")?.apply()
     }
 
-    val writingPrompts = listOf(
-        "What is something that made you feel peaceful today?",
-        "Describe a recent challenge you faced and how you overcame or plan to handle it.",
-        "What are three things you are exceptionally grateful for right now?",
-        "What lesson did you learn today that you want to remember tomorrow?",
-        "What did you do today that moved you closer to your quarterly goals?",
-        "Describe a person who made a positive impact on your day.",
-        "If you could rewrite one interaction from today, what would it be?",
-        "What is a personal boundary you successfully maintained recently?",
-        "What is currently draining your energy, and how can you minimize it?",
-        "What is one thing you're looking forward to tomorrow, and why?"
-    )
+    val writingPrompts =
+        listOf(
+            "What is something that made you feel peaceful today?",
+            "Describe a recent challenge you faced and how you overcame or plan to handle it.",
+            "What are three things you are exceptionally grateful for right now?",
+            "What lesson did you learn today that you want to remember tomorrow?",
+            "What did you do today that moved you closer to your quarterly goals?",
+            "Describe a person who made a positive impact on your day.",
+            "If you could rewrite one interaction from today, what would it be?",
+            "What is a personal boundary you successfully maintained recently?",
+            "What is currently draining your energy, and how can you minimize it?",
+            "What is one thing you're looking forward to tomorrow, and why?",
+        )
 
-    fun setJournalMood(noteId: String, mood: String) {
+    fun setJournalMood(
+        noteId: String,
+        mood: String,
+    ) {
         prefs?.edit()?.putString("journal_mood_$noteId", mood)?.apply()
         loadAllNotes()
     }
@@ -309,7 +313,10 @@ class NoteViewModel(
         return prefs?.getString("journal_mood_$noteId", null)
     }
 
-    fun setJournalWeather(noteId: String, weather: String) {
+    fun setJournalWeather(
+        noteId: String,
+        weather: String,
+    ) {
         prefs?.edit()?.putString("journal_weather_$noteId", weather)?.apply()
         loadAllNotes()
     }
@@ -318,7 +325,10 @@ class NoteViewModel(
         return prefs?.getString("journal_weather_$noteId", null)
     }
 
-    fun setJournalEnergy(noteId: String, energy: String) {
+    fun setJournalEnergy(
+        noteId: String,
+        energy: String,
+    ) {
         prefs?.edit()?.putString("journal_energy_$noteId", energy)?.apply()
         loadAllNotes()
     }
@@ -329,10 +339,11 @@ class NoteViewModel(
 
     fun getJournalStreak(): Int {
         val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-        val notes = allNotes.value.filter { note ->
-            val tag = prefs?.getString("label_note_${note.id}", null) ?: ""
-            tag.equals("Journal", ignoreCase = true) || note.title.startsWith("Journal -")
-        }
+        val notes =
+            allNotes.value.filter { note ->
+                val tag = prefs?.getString("label_note_${note.id}", null) ?: ""
+                tag.equals("Journal", ignoreCase = true) || note.title.startsWith("Journal -")
+            }
         if (notes.isEmpty()) return 0
 
         val dates = notes.map { sdf.format(java.util.Date(it.createdAt)) }.toSet()
@@ -342,11 +353,12 @@ class NoteViewModel(
         calendar.add(java.util.Calendar.DAY_OF_YEAR, -1)
         val yesterdayStr = sdf.format(calendar.time)
 
-        var startStr = when {
-            dates.contains(todayStr) -> todayStr
-            dates.contains(yesterdayStr) -> yesterdayStr
-            else -> return 0
-        }
+        var startStr =
+            when {
+                dates.contains(todayStr) -> todayStr
+                dates.contains(yesterdayStr) -> yesterdayStr
+                else -> return 0
+            }
 
         var streak = 0
         val tempCal = java.util.Calendar.getInstance()
@@ -367,16 +379,18 @@ class NoteViewModel(
     }
 
     fun getRecentMoodTrend(): String {
-        val notes = allNotes.value.filter { note ->
-            val tag = prefs?.getString("label_note_${note.id}", null) ?: ""
-            tag.equals("Journal", ignoreCase = true) || note.title.startsWith("Journal -")
-        }.sortedByDescending { it.createdAt }
+        val notes =
+            allNotes.value.filter { note ->
+                val tag = prefs?.getString("label_note_${note.id}", null) ?: ""
+                tag.equals("Journal", ignoreCase = true) || note.title.startsWith("Journal -")
+            }.sortedByDescending { it.createdAt }
 
         if (notes.isEmpty()) return "No data yet"
 
-        val moods = notes.mapNotNull { note ->
-            prefs?.getString("journal_mood_${note.id}", null)
-        }
+        val moods =
+            notes.mapNotNull { note ->
+                prefs?.getString("journal_mood_${note.id}", null)
+            }
         if (moods.isEmpty()) return "No data yet"
 
         val moodCounts = moods.groupingBy { it }.eachCount()
@@ -386,11 +400,12 @@ class NoteViewModel(
 
     fun insertJournalPromptBlock(promptText: String) {
         val current = _activeNote.value ?: return
-        val newBlock = Block(
-            id = java.util.UUID.randomUUID().toString(),
-            type = BlockType.QUOTE,
-            text = "✍️ Prompt: $promptText"
-        )
+        val newBlock =
+            Block(
+                id = java.util.UUID.randomUUID().toString(),
+                type = BlockType.QUOTE,
+                text = "✍️ Prompt: $promptText",
+            )
         val updatedList = current.blocks.toMutableList()
         val index = current.blocks.indexOfFirst { it.id == _focusedBlockId.value }
         if (index != -1) {
@@ -398,10 +413,11 @@ class NoteViewModel(
         } else {
             updatedList.add(newBlock)
         }
-        val updated = current.copy(
-            blocks = updatedList,
-            updatedAt = System.currentTimeMillis()
-        )
+        val updated =
+            current.copy(
+                blocks = updatedList,
+                updatedAt = System.currentTimeMillis(),
+            )
         _activeNote.value = updated
         _focusedBlockId.value = newBlock.id
         saveNoteDynamically(updated)

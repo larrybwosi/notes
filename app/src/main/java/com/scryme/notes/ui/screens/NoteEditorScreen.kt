@@ -328,22 +328,23 @@ fun NoteEditorScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = androidx.compose.foundation.BorderStroke(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    border =
+                        androidx.compose.foundation.BorderStroke(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                        ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Icon(
                                 imageVector = Icons.Default.TrendingUp,
                                 contentDescription = "Journaling Journey",
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(20.dp),
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
@@ -351,7 +352,7 @@ fun NoteEditorScreen(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                fontFamily = selectedFontFamily
+                                fontFamily = selectedFontFamily,
                             )
                         }
 
@@ -359,24 +360,24 @@ fun NoteEditorScreen(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             // Column 1: Current Streak
                             Card(
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f))
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)),
                             ) {
                                 Column(
                                     modifier = Modifier.padding(12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                    horizontalAlignment = Alignment.CenterHorizontally,
                                 ) {
                                     Text(
                                         text = "Current Streak",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Medium,
                                         color = MaterialTheme.colorScheme.primary,
-                                        fontFamily = selectedFontFamily
+                                        fontFamily = selectedFontFamily,
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
@@ -384,34 +385,36 @@ fun NoteEditorScreen(
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.ExtraBold,
                                         color = MaterialTheme.colorScheme.primary,
-                                        fontFamily = selectedFontFamily
+                                        fontFamily = selectedFontFamily,
                                     )
                                 }
                             }
 
                             // Column 2: Total Journals
-                            val journalCount = remember(allNotes) {
-                                allNotes.filter { note ->
-                                    val tag = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-                                        .getString("label_note_${note.id}", null) ?: ""
-                                    tag.equals("Journal", ignoreCase = true) || note.title.startsWith("Journal -")
-                                }.size
-                            }
+                            val journalCount =
+                                remember(allNotes) {
+                                    allNotes.filter { note ->
+                                        val tag =
+                                            context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                                                .getString("label_note_${note.id}", null) ?: ""
+                                        tag.equals("Journal", ignoreCase = true) || note.title.startsWith("Journal -")
+                                    }.size
+                                }
                             Card(
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.15f))
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.15f)),
                             ) {
                                 Column(
                                     modifier = Modifier.padding(12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                    horizontalAlignment = Alignment.CenterHorizontally,
                                 ) {
                                     Text(
                                         text = "Total Entries",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Medium,
                                         color = MaterialTheme.colorScheme.secondary,
-                                        fontFamily = selectedFontFamily
+                                        fontFamily = selectedFontFamily,
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
@@ -419,7 +422,7 @@ fun NoteEditorScreen(
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.ExtraBold,
                                         color = MaterialTheme.colorScheme.secondary,
-                                        fontFamily = selectedFontFamily
+                                        fontFamily = selectedFontFamily,
                                     )
                                 }
                             }
@@ -429,18 +432,18 @@ fun NoteEditorScreen(
                             Card(
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.12f))
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.12f)),
                             ) {
                                 Column(
                                     modifier = Modifier.padding(12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                    horizontalAlignment = Alignment.CenterHorizontally,
                                 ) {
                                     Text(
                                         text = "Mood Trend",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Medium,
                                         color = MaterialTheme.colorScheme.tertiary,
-                                        fontFamily = selectedFontFamily
+                                        fontFamily = selectedFontFamily,
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
@@ -450,7 +453,7 @@ fun NoteEditorScreen(
                                         color = MaterialTheme.colorScheme.tertiary,
                                         fontFamily = selectedFontFamily,
                                         maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        overflow = TextOverflow.Ellipsis,
                                     )
                                 }
                             }
@@ -1070,11 +1073,12 @@ fun NoteEditorScreen(
             }
 
             // High-End Journaling: Interactive Mood, Weather, Energy & Inspiration widgets
-            val isJournalNote = remember(note.id, note.updatedAt) {
-                val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
-                val tag = prefs.getString("label_note_${note.id}", null) ?: ""
-                tag.equals("Journal", ignoreCase = true) || note.title.startsWith("Journal -")
-            }
+            val isJournalNote =
+                remember(note.id, note.updatedAt) {
+                    val prefs = context.getSharedPreferences("notes_prefs", android.content.Context.MODE_PRIVATE)
+                    val tag = prefs.getString("label_note_${note.id}", null) ?: ""
+                    tag.equals("Journal", ignoreCase = true) || note.title.startsWith("Journal -")
+                }
 
             if (isJournalNote) {
                 if (includeMoodWeather) {
@@ -1083,10 +1087,11 @@ fun NoteEditorScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)),
-                        border = androidx.compose.foundation.BorderStroke(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                        )
+                        border =
+                            androidx.compose.foundation.BorderStroke(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                            ),
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             // Header Row
@@ -1095,7 +1100,7 @@ fun NoteEditorScreen(
                                     imageVector = Icons.Default.CalendarToday,
                                     contentDescription = "Journal Logs",
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(16.dp),
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
@@ -1103,7 +1108,7 @@ fun NoteEditorScreen(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary,
-                                    fontFamily = selectedFontFamily
+                                    fontFamily = selectedFontFamily,
                                 )
                             }
 
@@ -1115,45 +1120,47 @@ fun NoteEditorScreen(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontFamily = selectedFontFamily
+                                fontFamily = selectedFontFamily,
                             )
                             Spacer(modifier = Modifier.height(6.dp))
-                            val moodsList = listOf(
-                                "🥰 Grateful" to "Grateful 🥰",
-                                "😄 Happy" to "Happy 😄",
-                                "😐 Neutral" to "Neutral 😐",
-                                "😫 Stressed" to "Stressed 😫",
-                                "😴 Tired" to "Tired 😴"
-                            )
+                            val moodsList =
+                                listOf(
+                                    "🥰 Grateful" to "Grateful 🥰",
+                                    "😄 Happy" to "Happy 😄",
+                                    "😐 Neutral" to "Neutral 😐",
+                                    "😫 Stressed" to "Stressed 😫",
+                                    "😴 Tired" to "Tired 😴",
+                                )
                             val currentMood = viewModel.getJournalMood(note.id) ?: ""
                             Row(
                                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
                             ) {
                                 moodsList.forEach { (label, value) ->
                                     val isSelected = currentMood == value
                                     Box(
-                                        modifier = Modifier
-                                            .background(
-                                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                                                shape = RoundedCornerShape(8.dp)
-                                            )
-                                            .border(
-                                                width = 1.dp,
-                                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                                shape = RoundedCornerShape(8.dp)
-                                            )
-                                            .clickable {
-                                                viewModel.setJournalMood(note.id, value)
-                                            }
-                                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                                        modifier =
+                                            Modifier
+                                                .background(
+                                                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                                                    shape = RoundedCornerShape(8.dp),
+                                                )
+                                                .border(
+                                                    width = 1.dp,
+                                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                                                    shape = RoundedCornerShape(8.dp),
+                                                )
+                                                .clickable {
+                                                    viewModel.setJournalMood(note.id, value)
+                                                }
+                                                .padding(horizontal = 8.dp, vertical = 6.dp),
                                     ) {
                                         Text(
                                             text = label,
                                             fontSize = 11.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                             color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                                            fontFamily = selectedFontFamily
+                                            fontFamily = selectedFontFamily,
                                         )
                                     }
                                 }
@@ -1167,45 +1174,47 @@ fun NoteEditorScreen(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontFamily = selectedFontFamily
+                                fontFamily = selectedFontFamily,
                             )
                             Spacer(modifier = Modifier.height(6.dp))
-                            val weatherList = listOf(
-                                "☀️ Sunny" to "Sunny ☀️",
-                                "☁️ Cloudy" to "Cloudy ☁️",
-                                "🌧️ Rainy" to "Rainy 🌧️",
-                                "❄️ Snowy" to "Snowy ❄️",
-                                "💨 Windy" to "Windy 💨"
-                            )
+                            val weatherList =
+                                listOf(
+                                    "☀️ Sunny" to "Sunny ☀️",
+                                    "☁️ Cloudy" to "Cloudy ☁️",
+                                    "🌧️ Rainy" to "Rainy 🌧️",
+                                    "❄️ Snowy" to "Snowy ❄️",
+                                    "💨 Windy" to "Windy 💨",
+                                )
                             val currentWeather = viewModel.getJournalWeather(note.id) ?: ""
                             Row(
                                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
                             ) {
                                 weatherList.forEach { (label, value) ->
                                     val isSelected = currentWeather == value
                                     Box(
-                                        modifier = Modifier
-                                            .background(
-                                                color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
-                                                shape = RoundedCornerShape(8.dp)
-                                            )
-                                            .border(
-                                                width = 1.dp,
-                                                color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                                shape = RoundedCornerShape(8.dp)
-                                            )
-                                            .clickable {
-                                                viewModel.setJournalWeather(note.id, value)
-                                            }
-                                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                                        modifier =
+                                            Modifier
+                                                .background(
+                                                    color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+                                                    shape = RoundedCornerShape(8.dp),
+                                                )
+                                                .border(
+                                                    width = 1.dp,
+                                                    color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                                                    shape = RoundedCornerShape(8.dp),
+                                                )
+                                                .clickable {
+                                                    viewModel.setJournalWeather(note.id, value)
+                                                }
+                                                .padding(horizontal = 8.dp, vertical = 6.dp),
                                     ) {
                                         Text(
                                             text = label,
                                             fontSize = 11.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                             color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
-                                            fontFamily = selectedFontFamily
+                                            fontFamily = selectedFontFamily,
                                         )
                                     }
                                 }
@@ -1219,45 +1228,47 @@ fun NoteEditorScreen(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontFamily = selectedFontFamily
+                                fontFamily = selectedFontFamily,
                             )
                             Spacer(modifier = Modifier.height(6.dp))
-                            val energyList = listOf(
-                                "Low 🔋" to "Low 🔋",
-                                "Medium ⚡" to "Medium ⚡",
-                                "High 🚀" to "High 🚀"
-                            )
+                            val energyList =
+                                listOf(
+                                    "Low 🔋" to "Low 🔋",
+                                    "Medium ⚡" to "Medium ⚡",
+                                    "High 🚀" to "High 🚀",
+                                )
                             val currentEnergy = viewModel.getJournalEnergy(note.id) ?: ""
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
                             ) {
                                 energyList.forEach { (label, value) ->
                                     val isSelected = currentEnergy == value
                                     Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .background(
-                                                color = if (isSelected) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surface,
-                                                shape = RoundedCornerShape(8.dp)
-                                            )
-                                            .border(
-                                                width = 1.dp,
-                                                color = if (isSelected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                                shape = RoundedCornerShape(8.dp)
-                                            )
-                                            .clickable {
-                                                viewModel.setJournalEnergy(note.id, value)
-                                            }
-                                            .padding(vertical = 6.dp),
-                                        contentAlignment = Alignment.Center
+                                        modifier =
+                                            Modifier
+                                                .weight(1f)
+                                                .background(
+                                                    color = if (isSelected) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surface,
+                                                    shape = RoundedCornerShape(8.dp),
+                                                )
+                                                .border(
+                                                    width = 1.dp,
+                                                    color = if (isSelected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                                                    shape = RoundedCornerShape(8.dp),
+                                                )
+                                                .clickable {
+                                                    viewModel.setJournalEnergy(note.id, value)
+                                                }
+                                                .padding(vertical = 6.dp),
+                                        contentAlignment = Alignment.Center,
                                     ) {
                                         Text(
                                             text = label,
                                             fontSize = 11.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                             color = if (isSelected) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSurface,
-                                            fontFamily = selectedFontFamily
+                                            fontFamily = selectedFontFamily,
                                         )
                                     }
                                 }
@@ -1278,23 +1289,24 @@ fun NoteEditorScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.08f)),
-                        border = androidx.compose.foundation.BorderStroke(
-                            width = 1.dp,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                        )
+                        border =
+                            androidx.compose.foundation.BorderStroke(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            ),
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
                                         imageVector = Icons.Default.AutoAwesome,
                                         contentDescription = "Prompt Icon",
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(16.dp),
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
@@ -1302,7 +1314,7 @@ fun NoteEditorScreen(
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.primary,
-                                        fontFamily = selectedFontFamily
+                                        fontFamily = selectedFontFamily,
                                     )
                                 }
 
@@ -1310,13 +1322,13 @@ fun NoteEditorScreen(
                                     onClick = {
                                         currentPromptIndex = (currentPromptIndex + 1) % viewModel.writingPrompts.size
                                     },
-                                    modifier = Modifier.size(24.dp)
+                                    modifier = Modifier.size(24.dp),
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Refresh,
                                         contentDescription = "Next Prompt",
                                         tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(14.dp)
+                                        modifier = Modifier.size(14.dp),
                                     )
                                 }
                             }
@@ -1329,7 +1341,7 @@ fun NoteEditorScreen(
                                 fontStyle = FontStyle.Italic,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontFamily = selectedFontFamily,
-                                lineHeight = 18.sp
+                                lineHeight = 18.sp,
                             )
 
                             Spacer(modifier = Modifier.height(10.dp))
@@ -1341,16 +1353,17 @@ fun NoteEditorScreen(
                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                                 modifier = Modifier.align(Alignment.End).height(28.dp),
                                 shape = RoundedCornerShape(14.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary
-                                )
+                                colors =
+                                    ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    ),
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(
                                         imageVector = Icons.Default.Edit,
                                         contentDescription = null,
-                                        modifier = Modifier.size(10.dp)
+                                        modifier = Modifier.size(10.dp),
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text("Insert Prompt as Block", fontSize = 10.sp, fontWeight = FontWeight.Bold)
