@@ -90,6 +90,30 @@ class NoteViewModel(
     private val _journalHabitsList = MutableStateFlow(prefs?.getString("journal_habits_list", "Meditated 🧘, Exercised 🏃, Drank 8 glasses of water 💧, Read a book 📖") ?: "Meditated 🧘, Exercised 🏃, Drank 8 glasses of water 💧, Read a book 📖")
     val journalHabitsList: StateFlow<String> = _journalHabitsList.asStateFlow()
 
+    private val _journalIncludeMoodWeather = MutableStateFlow(prefs?.getBoolean("journal_include_mood_weather", true) ?: true)
+    val journalIncludeMoodWeather: StateFlow<Boolean> = _journalIncludeMoodWeather.asStateFlow()
+
+    private val _journalIncludeStreakStats = MutableStateFlow(prefs?.getBoolean("journal_include_streak_stats", true) ?: true)
+    val journalIncludeStreakStats: StateFlow<Boolean> = _journalIncludeStreakStats.asStateFlow()
+
+    private val _journalIncludePrompts = MutableStateFlow(prefs?.getBoolean("journal_include_prompts", true) ?: true)
+    val journalIncludePrompts: StateFlow<Boolean> = _journalIncludePrompts.asStateFlow()
+
+    fun setJournalIncludeMoodWeather(enabled: Boolean) {
+        _journalIncludeMoodWeather.value = enabled
+        prefs?.edit()?.putBoolean("journal_include_mood_weather", enabled)?.apply()
+    }
+
+    fun setJournalIncludeStreakStats(enabled: Boolean) {
+        _journalIncludeStreakStats.value = enabled
+        prefs?.edit()?.putBoolean("journal_include_streak_stats", enabled)?.apply()
+    }
+
+    fun setJournalIncludePrompts(enabled: Boolean) {
+        _journalIncludePrompts.value = enabled
+        prefs?.edit()?.putBoolean("journal_include_prompts", enabled)?.apply()
+    }
+
     fun setJournalIncludeStandup(enabled: Boolean) {
         _journalIncludeStandup.value = enabled
         prefs?.edit()?.putBoolean("journal_include_standup", enabled)?.apply()
@@ -261,6 +285,126 @@ class NoteViewModel(
             com.scryme.notes.receiver.ReminderScheduler.cancelNoteReminder(context, reminder.id)
         }
         prefs?.edit()?.remove("note_reminders_list_$noteId")?.apply()
+    }
+
+    val writingPrompts = listOf(
+        "What is something that made you feel peaceful today?",
+        "Describe a recent challenge you faced and how you overcame or plan to handle it.",
+        "What are three things you are exceptionally grateful for right now?",
+        "What lesson did you learn today that you want to remember tomorrow?",
+        "What did you do today that moved you closer to your quarterly goals?",
+        "Describe a person who made a positive impact on your day.",
+        "If you could rewrite one interaction from today, what would it be?",
+        "What is a personal boundary you successfully maintained recently?",
+        "What is currently draining your energy, and how can you minimize it?",
+        "What is one thing you're looking forward to tomorrow, and why?"
+    )
+
+    fun setJournalMood(noteId: String, mood: String) {
+        prefs?.edit()?.putString("journal_mood_$noteId", mood)?.apply()
+        loadAllNotes()
+    }
+
+    fun getJournalMood(noteId: String): String? {
+        return prefs?.getString("journal_mood_$noteId", null)
+    }
+
+    fun setJournalWeather(noteId: String, weather: String) {
+        prefs?.edit()?.putString("journal_weather_$noteId", weather)?.apply()
+        loadAllNotes()
+    }
+
+    fun getJournalWeather(noteId: String): String? {
+        return prefs?.getString("journal_weather_$noteId", null)
+    }
+
+    fun setJournalEnergy(noteId: String, energy: String) {
+        prefs?.edit()?.putString("journal_energy_$noteId", energy)?.apply()
+        loadAllNotes()
+    }
+
+    fun getJournalEnergy(noteId: String): String? {
+        return prefs?.getString("journal_energy_$noteId", null)
+    }
+
+    fun getJournalStreak(): Int {
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val notes = allNotes.value.filter { note ->
+            val tag = prefs?.getString("label_note_${note.id}", null) ?: ""
+            tag.equals("Journal", ignoreCase = true) || note.title.startsWith("Journal -")
+        }
+        if (notes.isEmpty()) return 0
+
+        val dates = notes.map { sdf.format(java.util.Date(it.createdAt)) }.toSet()
+
+        val calendar = java.util.Calendar.getInstance()
+        val todayStr = sdf.format(calendar.time)
+        calendar.add(java.util.Calendar.DAY_OF_YEAR, -1)
+        val yesterdayStr = sdf.format(calendar.time)
+
+        var startStr = when {
+            dates.contains(todayStr) -> todayStr
+            dates.contains(yesterdayStr) -> yesterdayStr
+            else -> return 0
+        }
+
+        var streak = 0
+        val tempCal = java.util.Calendar.getInstance()
+        if (startStr == yesterdayStr) {
+            tempCal.add(java.util.Calendar.DAY_OF_YEAR, -1)
+        }
+
+        while (true) {
+            val dateToCheck = sdf.format(tempCal.time)
+            if (dates.contains(dateToCheck)) {
+                streak++
+                tempCal.add(java.util.Calendar.DAY_OF_YEAR, -1)
+            } else {
+                break
+            }
+        }
+        return streak
+    }
+
+    fun getRecentMoodTrend(): String {
+        val notes = allNotes.value.filter { note ->
+            val tag = prefs?.getString("label_note_${note.id}", null) ?: ""
+            tag.equals("Journal", ignoreCase = true) || note.title.startsWith("Journal -")
+        }.sortedByDescending { it.createdAt }
+
+        if (notes.isEmpty()) return "No data yet"
+
+        val moods = notes.mapNotNull { note ->
+            prefs?.getString("journal_mood_${note.id}", null)
+        }
+        if (moods.isEmpty()) return "No data yet"
+
+        val moodCounts = moods.groupingBy { it }.eachCount()
+        val mostFrequentMood = moodCounts.maxByOrNull { it.value }?.key ?: "No data yet"
+        return mostFrequentMood
+    }
+
+    fun insertJournalPromptBlock(promptText: String) {
+        val current = _activeNote.value ?: return
+        val newBlock = Block(
+            id = java.util.UUID.randomUUID().toString(),
+            type = BlockType.QUOTE,
+            text = "✍️ Prompt: $promptText"
+        )
+        val updatedList = current.blocks.toMutableList()
+        val index = current.blocks.indexOfFirst { it.id == _focusedBlockId.value }
+        if (index != -1) {
+            updatedList.add(index + 1, newBlock)
+        } else {
+            updatedList.add(newBlock)
+        }
+        val updated = current.copy(
+            blocks = updatedList,
+            updatedAt = System.currentTimeMillis()
+        )
+        _activeNote.value = updated
+        _focusedBlockId.value = newBlock.id
+        saveNoteDynamically(updated)
     }
 
     fun createDailyJournalNote() {

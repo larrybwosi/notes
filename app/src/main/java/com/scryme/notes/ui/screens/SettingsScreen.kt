@@ -60,6 +60,10 @@ fun SettingsScreen(
     val includeTimeTracking by viewModel.journalIncludeTimeTracking.collectAsState()
     val habitsListStr by viewModel.journalHabitsList.collectAsState()
 
+    val includeMoodWeather by viewModel.journalIncludeMoodWeather.collectAsState()
+    val includeStreakStats by viewModel.journalIncludeStreakStats.collectAsState()
+    val includePrompts by viewModel.journalIncludePrompts.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -319,10 +323,51 @@ fun SettingsScreen(
             SettingsSection(title = "Enterprise Journal Settings") {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "Customize the blocks generated when you tap \"Start Daily Journal\" on the dashboard.",
+                        text = "Customize the blocks and premium widgets generated when you tap \"Start Daily Journal\" on the dashboard.",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+
+                    // Premium: Mood & Weather Tracker
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Mood, Weather & Energy Tracker", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Text("Interactive mood & weather logs inside journal pages", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = includeMoodWeather, onCheckedChange = { viewModel.setJournalIncludeMoodWeather(it) })
+                    }
+
+                    // Premium: Streaks & Stats
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Streaks & Mood Trends Dashboard", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Text("Display gorgeous statistics & current streak on the dashboard", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = includeStreakStats, onCheckedChange = { viewModel.setJournalIncludeStreakStats(it) })
+                    }
+
+                    // Premium: Writing Prompts
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Inspirational Writing Prompts Widget", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Text("Cure writer's block with rotating, deep writing prompts", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = includePrompts, onCheckedChange = { viewModel.setJournalIncludePrompts(it) })
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
                     // Standup
                     Row(
